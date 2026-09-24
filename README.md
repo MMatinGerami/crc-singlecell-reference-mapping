@@ -60,6 +60,26 @@ reference vocabulary sit visibly further from the reference in scANVI latent spa
 cells most clearly — but the overlap with the shared-type tail explains why *natural* novelty
 detection (best AUROC 0.674) is far harder than the controlled deletions below.
 
+#### Can the trade-off be promised in advance?
+
+Reading a coverage–accuracy curve off the test cohort is descriptive; a lab needs a threshold
+chosen *before* seeing its data. So five reference patients were held out as a calibration set,
+scVI→scANVI retrained without them, and the confidence threshold meeting each accuracy target
+was committed on the calibration patients, then applied unchanged to KUL3
+(`scripts/06_calibrated_abstention.py`):
+
+| Target | Threshold | Calibration (SMC held-out) | Delivered on KUL3 |
+|---|---|---|---|
+| 90% | 0.776 | 0.900 @ 92.6% coverage | 0.864 @ 92.7% coverage |
+| 95% | 0.986 | 0.950 @ 76.1% coverage | 0.906 @ 77.8% coverage |
+| 98% | 0.999 | 0.980 @ 54.0% coverage | 0.933 @ 58.6% coverage |
+
+**Coverage transfers almost exactly; accuracy lands ~4 points below target.** Within-cohort
+calibration is not enough under a cohort shift — the confidence distribution moves just enough
+to break the guarantee while keeping its shape. A pre-committed threshold is still far better
+than none (90.6% vs 82.3% unfiltered at the 95% target), but an honest deployment would need
+shift-aware calibration.
+
 ### Open-set experiment: delete a cell type, then try to rediscover it
 
 ![open-set](results/figures/fig4_open_set_auroc.png)
@@ -100,6 +120,32 @@ users: reference mapping plus a latent-distance flag will catch a genuinely new 
 per-lineage novelty thresholds and for treating high-confidence calls within heterogeneous
 compartments (T cells, myeloid, tumour epithelium) with more suspicion than the global
 confidence suggests.
+
+### A second external cohort: sensitivity vs false alarms
+
+KUL3 asked whether the novelty flag *fires* on unseen populations. The complementary question —
+does it stay *quiet* when everything is known but the data are shifted? — needs a cohort with
+no novel types. A 40,000-cell stratified subsample of the
+[Pelka et al., 2021](https://doi.org/10.1016/j.cell.2021.08.003) US atlas
+(GSE178341: 62 patients, multiple hospitals, 10x v2 **and** v3 chemistries) was mapped
+onto the same frozen reference; all seven of its top-level populations exist in the reference.
+
+- **Coarse labels transfer almost perfectly under the lab-and-chemistry shift:** macro-F1
+  **0.991** (95% CI 0.989–0.993 — a patient bootstrap over 62 patients, against
+  KUL3's six).
+- **False-alarm rate:** with the flag threshold fixed at the 95th percentile of KUL3
+  shared-subtype distances, 8.3% of Pelka cells are flagged — mildly above the 5%
+  baseline, so a second cohort shift does not blow the flag up.
+- **But the same threshold catches only 2.7% of KUL3's genuinely novel cells** —
+  fewer than it catches of ordinary shared cells. The distance *tail* belongs to shared-cell
+  outliers; the vocabulary-gap signal (fig. 5) lives in the middle of the distribution, where
+  a global threshold cannot reach it without flooding the queue with false alarms.
+
+<p align="center"><img src="results/figures/fig7_pelka.png" width="60%"></p>
+
+Taken together: latent distance is trustworthy for *lineage-level* novelty and stays roughly
+calm under cohort shift, but tail-thresholding is structurally unable to surface *subtype-level*
+gaps — consistent with the sibling-absorption result above.
 
 ### Integration quality (scib-metrics)
 
@@ -209,10 +255,13 @@ results/tables, figures      every number and figure in this README
 
 ## What I would do next
 
-1. **A third cohort from a different platform** (e.g. inDrop or BD Rhapsody CRC data) to
-   separate cohort effects from platform effects.
-2. **Calibrated abstention thresholds** chosen on reference cross-validation, so the
-   coverage–accuracy trade-off can be promised in advance rather than read off after the fact.
+1. **A true platform shift.** The Pelka cohort varies labs and 10x chemistry; Smart-seq2 or
+   BD Rhapsody CRC data would test a harder shift — blocked for now on public *raw-count*
+   availability (the candidate Smart-seq2 cohort ships only TPM, which a count-likelihood
+   model cannot honestly ingest).
+2. **Shift-aware calibration.** Pre-committed thresholds kept their promised coverage on KUL3
+   but missed the accuracy target by ~4 points (see above); conformal or importance-weighted
+   calibration might close that gap.
 3. **A foundation-model embedding** (scGPT/Geneformer class) as a fifth transfer method, to
    test whether pretraining at atlas scale closes the fine-subtype gap.
 

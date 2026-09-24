@@ -34,3 +34,20 @@ def test_baselines_recover_separable_classes():
     far = knn_on_embedding(X, y, X + 50.0, k=5).novelty
     near = knn_on_embedding(X, y, X, k=5).novelty
     assert far.mean() > near.mean()
+
+
+def test_calibration_threshold_logic():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("cal", "scripts/06_calibrated_abstention.py")
+    cal = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cal)
+    conf = np.array([0.99, 0.9, 0.8, 0.7, 0.6])
+    correct = np.array([True, True, True, False, False])
+    # covering the top three gives accuracy 1.0 >= 0.95; adding the fourth drops to 0.75
+    assert cal.threshold_for(conf, correct, 0.95) == pytest.approx(0.8)
+    # an unreachable target returns a threshold that abstains on everything
+    assert cal.threshold_for(conf, np.zeros(5, dtype=bool), 0.5) > 1.0
+    out = cal.evaluate_at(conf, correct, 0.8)
+    assert out["coverage"] == pytest.approx(0.6)
+    assert out["accuracy"] == pytest.approx(1.0)
