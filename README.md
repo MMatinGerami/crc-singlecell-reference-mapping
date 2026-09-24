@@ -253,19 +253,6 @@ results/tables, figures      every number and figure in this README
 - **scib-metrics caveat repeated:** scANVI trained on reference labels, so label-based
   bio-conservation metrics structurally favour it.
 
-## What I would do next
-
-1. **A true platform shift.** The Pelka cohort varies labs and 10x chemistry; Smart-seq2 or
-   BD Rhapsody CRC data would test a harder shift — blocked for now on public *raw-count*
-   availability (the candidate Smart-seq2 cohort ships only TPM, which a count-likelihood
-   model cannot honestly ingest).
-2. **Shift-aware calibration.** Pre-committed thresholds kept their promised coverage on KUL3
-   but missed the accuracy target by ~4 points (see above); conformal or importance-weighted
-   calibration might close that gap.
-3. **A foundation-model embedding** (scGPT/Geneformer class) as a fifth transfer method, to
-   test whether pretraining at atlas scale closes the fine-subtype gap.
-
-
 ## Data and references
 
 - Data: Lee et al., *Lineage-dependent gene expression programs influence the immune landscape
