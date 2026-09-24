@@ -1,0 +1,42 @@
+cell_type,cell_subtype,label_role,n_query_cells,n_reference_cells
+B cells,CD19+CD20+ B,shared,1845,3733.0
+B cells,IgA+ Plasma,shared,2717,3546.0
+B cells,IgG+ Plasma,shared,105,1755.0
+B cells,Unknown,excluded,24,2181.0
+B cells,Unspecified Plasma,excluded,211,0.0
+Epithelial cells,BEST4+ Enterocytes,novel,52,0.0
+Epithelial cells,CMS1,shared,758,1201.0
+Epithelial cells,CMS2,shared,620,10771.0
+Epithelial cells,CMS3,shared,804,5486.0
+Epithelial cells,CMS4,shared,30,11.0
+Epithelial cells,Epithelial cells,excluded,2812,0.0
+Epithelial cells,Goblet cells,shared,165,139.0
+Epithelial cells,Intermediate,shared,253,181.0
+Epithelial cells,Mature Enterocytes,shared,153,344.0
+Epithelial cells,Stem-like/TA,shared,495,406.0
+Epithelial cells,Tuft cells,novel,26,0.0
+Mast cells,Mast cells,shared,248,187.0
+Myeloids,Anti-inflammatory,novel,656,0.0
+Myeloids,Pro-inflammatory,shared,704,2399.0
+Myeloids,Proliferating,shared,274,171.0
+Myeloids,SPP1+,shared,737,3252.0
+Myeloids,Unknown,excluded,143,2181.0
+Myeloids,cDC,shared,162,482.0
+Stromal cells,Enteric glial cells,shared,463,305.0
+Stromal cells,Lymphatic ECs,shared,123,108.0
+Stromal cells,Myofibroblasts,shared,1226,1155.0
+Stromal cells,Pericytes,shared,438,445.0
+Stromal cells,Smooth muscle cells,shared,591,214.0
+Stromal cells,Stalk-like ECs,shared,523,438.0
+Stromal cells,Stromal 1,shared,692,1045.0
+Stromal cells,Stromal 2,shared,197,394.0
+Stromal cells,Stromal 3,shared,2467,868.0
+Stromal cells,Tip-like ECs,shared,930,917.0
+T cells,CD4+ T cells,shared,2061,7305.0
+T cells,CD8+ T cells,shared,1326,6404.0
+T cells,NK cells,shared,270,1111.0
+T cells,Regulatory T cells,shared,1111,3097.0
+T cells,T follicular helper cells,shared,259,620.0
+T cells,T helper 17 cells,shared,312,1978.0
+T cells,Unknown,excluded,272,2181.0
+T cells,gamma delta T cells,shared,159,996.0
