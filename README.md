@@ -75,6 +75,26 @@ To test false alarms under a shift with no novel populations, a 40,000-cell stra
 
 <p align="center"><img src="results/figures/fig7_pelka.png" width="60%"></p>
 
+### Variation across patients and tissues
+
+Pooled metrics hide how much performance depends on the patient. On the shared fine
+subtypes, scANVI's accuracy ranges from 0.76 (KUL21) to 0.87 (KUL30) across the six query
+patients, and every method does worse on tumour cells (scANVI 0.76) than on normal mucosa
+(0.90), with the tumour border in between (`scripts/08_per_patient.py`).
+
+![per-patient](results/figures/fig8_per_patient.png)
+
+### Conformal sets under cohort shift
+
+Split conformal prediction (score 1 - p(true subtype)) calibrated on the five held-out
+reference patients gives exactly the nominal coverage within the reference (0.900 and 0.950)
+and loses 3 to 4 points on the Belgian query (0.864 and 0.914), with per-patient coverage
+between 0.82 and 0.91 at the 90% level. Per-subtype thresholds do not recover the loss,
+so the shift affects all cell types rather than a few rare ones
+(`scripts/09_conformal_shift.py`; full tables in [`MODEL_CARD.md`](MODEL_CARD.md)).
+
+![conformal-shift](results/figures/fig9_conformal_shift.png)
+
 ### Integration quality (scib-metrics)
 
 30,000-cell stratified subsample, batch = cohort, labels = major cell type:
@@ -112,7 +132,7 @@ Requires [uv](https://docs.astral.sh/uv/) and ~2 GB of disk. Data: GEO [GSE13246
 ```bash
 uv sync
 make data          # download both cohorts from GEO (~190 MB)
-make all           # prepare, transfer, open-set, integration, figures
+make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal
 make test          # unit tests
 ```
 
@@ -130,7 +150,8 @@ src/scmap/
   models.py                  scVI/scANVI training, scArches query mapping
   pipeline.py                reference-to-query run shared by all experiments
   evaluate.py                patient bootstrap, per-class F1, novelty AUROC
-scripts/01…07_*.py           pipeline steps (Makefile)
+  conformal.py               split conformal prediction sets
+scripts/01…09_*.py           pipeline steps (Makefile)
 tests/                       pytest suite, run in CI
 results/tables, figures      all numbers and figures in this README
 ```
