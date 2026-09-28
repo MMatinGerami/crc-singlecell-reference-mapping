@@ -1,0 +1,9 @@
+threshold,shared_flagged,novel_flagged,auroc,novel_subtype,n
+global,0.050004307003187184,0.027247956403269755,0.6736146236723692,,
+global,,0.012195121951219513,,Anti-inflammatory,656.0
+global,,0.038461538461538464,,BEST4+ Enterocytes,52.0
+global,,0.38461538461538464,,Tuft cells,26.0
+per lineage,0.050133517098802656,0.02452316076294278,0.37348371776759687,,
+per lineage,,0.013719512195121951,,Anti-inflammatory,656.0
+per lineage,,0.0,,BEST4+ Enterocytes,52.0
+per lineage,,0.34615384615384615,,Tuft cells,26.0
