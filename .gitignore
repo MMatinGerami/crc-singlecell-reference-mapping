@@ -12,3 +12,4 @@ results/models/
 results/tables/predictions.parquet
 logs/
 lightning_logs/
+results/tables/calibration_mapping.npz
