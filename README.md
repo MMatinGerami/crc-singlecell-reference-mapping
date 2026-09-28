@@ -1,91 +1,56 @@
-# Cross-cohort cell-type annotation in colorectal cancer, with honest uncertainty
+# Cross-cohort cell-type annotation in colorectal cancer scRNA-seq
 
-**Can a deep generative model trained on one hospital's tumours annotate another hospital's —
-and admit when it sees a cell type it was never taught?**
+This project tests how well cell-type labels transfer from one colorectal cancer (CRC) single-cell cohort to another, and whether each method can flag cells whose type is missing from the reference. It uses the two cohorts of [Lee et al., 2020](https://doi.org/10.1038/s41588-020-0636-z): **SMC (Korea, 23 patients, ~63k cells) as the annotated reference and KUL3 (Belgium, 6 patients, ~27k cells) as the query.** Query labels are used only for scoring, never for training.
 
-My bench work is on colorectal cancer (CRC), and this project comes from a practical problem in
-that field: every new scRNA-seq cohort needs its cells annotated, and re-clustering plus manual
-marker inspection takes weeks and drifts between labs. Reference mapping promises to transfer an
-existing atlas's labels automatically. But a classifier forced to choose among the labels it knows
-will confidently mislabel anything genuinely new — and in cancer, "genuinely new" is often the
-interesting part. So I evaluated both halves of the problem: **how accurately labels transfer
-across cohorts, and whether each method knows when it shouldn't answer.**
-
-The setup uses the two CRC cohorts of
-[Lee et al., 2020](https://doi.org/10.1038/s41588-020-0636-z), profiled in different countries at
-different centres: **SMC (Korea, 23 patients, ~63k cells) as the annotated reference and KUL3
-(Belgium, 6 patients, ~27k cells) as the query.** The query's own labels are used only for
-scoring, never for training — so the experiment is exactly what a lab annotating a new cohort
-faces, with the answer key kept in a sealed envelope.
+Built in September 2026, at the start of my M1.
 
 ## Key results
 
 | | Result |
 |---|---|
-| **Coarse annotation is solved** | All four methods place ≥99% of query cells in the right major lineage (macro-F1 0.995–0.997 over 6 classes) |
-| **Fine subtypes are the real test** | Best method (scANVI): **macro-F1 0.754** over 31 shared subtypes, 95% CI 0.71–0.75 (patient bootstrap); simple logistic regression is close behind (0.742) |
-| **What fails is biology, not noise** | Discrete identities transfer perfectly (mast cells, enteric glia, CD19+CD20+ B: F1 ≈ 1.0); continuous *states* collapse (proliferating myeloid 0.15, IgG+ plasma 0.26, tumour CMS subtypes 0.0–0.71) |
-| **Uncertainty is usable** | Abstaining on the 20% least-confident scANVI calls lifts accuracy on the rest from 0.82 to **0.89** — "annotate 80% automatically, review the flagged 20%" |
-| **Open-set: lineages are detectable, siblings are not** | Deleting a distinct lineage from the reference is flagged near-perfectly by latent distance (mast cells, enteric glia: AUROC 0.99); deleting a subtype whose close relative remains is largely absorbed by that relative (tip-like ECs → "stalk-like" for 96% of cells; best AUROC 0.60–0.83) |
-| **Annotation-vocabulary gaps are harder** | The three populations the reference annotation simply lacks are detected at best at AUROC 0.674 — plausibly because similar cells *exist* in the reference under other labels |
+| Coarse annotation | All four methods assign ≥99% of query cells to the correct major lineage (macro-F1 0.995 to 0.997, 6 classes) |
+| Fine subtypes | Best method (scANVI): **macro-F1 0.754** over 31 shared subtypes, 95% CI 0.71 to 0.75 (patient bootstrap); logistic regression: 0.742 |
+| Where transfer fails | Discrete cell types transfer well (mast cells, enteric glia, CD19+CD20+ B cells: F1 ≈ 1.0); continuous states do not (proliferating myeloid 0.15, IgG+ plasma 0.26, tumour CMS subtypes 0.0 to 0.71) |
+| Abstention | Rejecting the 20% least-confident scANVI calls raises accuracy on the rest from 0.82 to **0.89** |
+| Open-set detection | A deleted lineage with no close relative is flagged by latent distance (mast cells, enteric glia: AUROC 0.99); a deleted subtype with a close relative is mostly absorbed by it (96% of tip-like ECs called "stalk-like"; best AUROC 0.60 to 0.83) |
+| Annotation gaps | The three populations missing from the reference annotation are detected at best at AUROC 0.674, likely because similar cells exist in the reference under other labels |
 
 <p align="center"><img src="results/figures/fig1_umap_scanvi.png" width="85%"></p>
 
-### Label transfer across cohorts
+### Label transfer
 
 ![accuracy](results/figures/fig2_accuracy.png)
 
-Patient-level bootstrap CIs (6 query patients, 2,000 resamples). With this few patients the
-percentile interval sits at or below the point estimate — most resamples omit a patient — which
-is exactly why cell-level CIs would be misleadingly narrow here.
+Confidence intervals come from resampling the 6 query patients (2,000 resamples), because cells from one patient are not independent. With so few patients, the percentile interval sits at or below the point estimate.
 
 ![per-subtype](results/figures/fig3_per_subtype_f1.png)
 
-The heatmap has a clean vertical structure: rows fail or succeed together across all four
-methods. Cross-cohort transfer is limited by the *labels*, not the classifier — proliferation,
-macrophage polarisation and the tumour-intrinsic CMS subtypes are continua that were discretised
-differently in each cohort, and no amount of model capacity recovers a boundary that was never
-sharp. (CMS4 has 11 reference cells; F1 = 0 is a sample-size statement, not a modelling one.)
+Subtypes succeed or fail together across all four methods, so the limit is mostly in the labels rather than the classifier. Proliferation, macrophage polarisation and CMS subtypes are continuous and were split differently in each cohort. CMS4 has only 11 reference cells.
 
-### Knowing when not to answer
+### Abstention and novelty
 
 <p align="center">
 <img src="results/figures/fig6_selective_prediction.png" width="46%">
 <img src="results/figures/fig5_natural_novelty.png" width="46%">
 </p>
 
-Left: coverage–accuracy curves; scANVI's confidence is the most useful abstention signal
-(0.94 accuracy at 50% coverage, 0.89 at 80%). Right: query populations absent from the
-reference vocabulary sit visibly further from the reference in scANVI latent space — tuft
-cells most clearly — but the overlap with the shared-type tail explains why *natural* novelty
-detection (best AUROC 0.674) is far harder than the controlled deletions below.
+Left: coverage vs accuracy. scANVI confidence gives the best abstention signal (0.94 accuracy at 50% coverage, 0.89 at 80%). Right: populations missing from the reference annotation lie further from the reference in scANVI latent space (tuft cells most clearly), but they overlap with the tail of shared types.
 
-#### Can the trade-off be promised in advance?
+**Thresholds fixed in advance.** To choose an abstention threshold before seeing the query, five reference patients were held out as a calibration set, scVI and scANVI were retrained without them, and the threshold for each accuracy target was fixed on those patients, then applied to KUL3 (`scripts/06_calibrated_abstention.py`):
 
-Reading a coverage–accuracy curve off the test cohort is descriptive; a lab needs a threshold
-chosen *before* seeing its data. So five reference patients were held out as a calibration set,
-scVI→scANVI retrained without them, and the confidence threshold meeting each accuracy target
-was committed on the calibration patients, then applied unchanged to KUL3
-(`scripts/06_calibrated_abstention.py`):
-
-| Target | Threshold | Calibration (SMC held-out) | Delivered on KUL3 |
+| Target | Threshold | Calibration (SMC held-out) | KUL3 |
 |---|---|---|---|
-| 90% | 0.776 | 0.900 @ 92.6% coverage | 0.864 @ 92.7% coverage |
-| 95% | 0.986 | 0.950 @ 76.1% coverage | 0.906 @ 77.8% coverage |
-| 98% | 0.999 | 0.980 @ 54.0% coverage | 0.933 @ 58.6% coverage |
+| 90% | 0.776 | 0.900 at 92.6% coverage | 0.864 at 92.7% coverage |
+| 95% | 0.986 | 0.950 at 76.1% coverage | 0.906 at 77.8% coverage |
+| 98% | 0.999 | 0.980 at 54.0% coverage | 0.933 at 58.6% coverage |
 
-**Coverage transfers almost exactly; accuracy lands ~4 points below target.** Within-cohort
-calibration is not enough under a cohort shift — the confidence distribution moves just enough
-to break the guarantee while keeping its shape. A pre-committed threshold is still far better
-than none (90.6% vs 82.3% unfiltered at the 95% target), but an honest deployment would need
-shift-aware calibration.
+Coverage transfers almost exactly, but accuracy is about 4 points below target: the cohort shift moves the confidence distribution. A fixed threshold still helps (90.6% vs 82.3% unfiltered at the 95% target), but reliable guarantees would need shift-aware calibration.
 
-### Open-set experiment: delete a cell type, then try to rediscover it
+### Open-set experiment
 
 ![open-set](results/figures/fig4_open_set_auroc.png)
 
-Six cell types were deleted from the reference one at a time; AUROC for ranking the deleted
-type's query cells above the seen ones:
+Six cell types were deleted from the reference one at a time. AUROC for ranking the deleted type's query cells above the seen ones:
 
 | Held out (n query cells) | kNN-PCA dist. | LogReg conf. | scANVI conf. | scVI dist. | scANVI dist. |
 |---|---|---|---|---|---|
@@ -96,61 +61,23 @@ type's query cells above the seen ones:
 | γδ T cells (159) | 0.383 | **0.664** | 0.663 | 0.599 | 0.435 |
 | Regulatory T cells (1,111) | 0.303 | 0.745 | 0.752 | **0.828** | 0.561 |
 
-Three lessons, each visible in the table:
+- **Missing lineages are easy to detect, missing subtypes are not.** When the deleted type has a close relative in the reference, the mapping assigns it to that relative: scANVI called 96% of held-out tip-like ECs "stalk-like", 55% of γδ T cells "NK cells" and 37% of Tregs "T follicular helper".
+- **Raw PCA distance fails on mast cells (0.479) but does best on tip-like ECs (0.779).** Without batch correction every query cell is far from the reference, which hides the signal of a distinct lineage; but the uncorrected space also does not pull query cells onto their closest reference subtype.
+- **Deleting a type barely affects the others:** macro-F1 on the remaining subtypes stayed between 0.68 and 0.76.
 
-1. **Missing *lineages* are easy; missing *siblings* are hard.** When the deleted type has no
-   close relative in the reference (mast cells, glia), distance in the deep models' latent
-   space flags it almost perfectly. When a sibling remains (tip-like vs stalk-like endothelium,
-   γδ T vs NK/CD8, Tregs vs other CD4 states), the mapping absorbs the novel cells into the
-   sibling's neighbourhood — scANVI called 96% of held-out tip-like ECs "stalk-like", 55% of
-   γδ T cells "NK cells", 37% of Tregs "T follicular helper" — and no novelty score fully
-   recovers them. These misassignments are biologically sensible, which is exactly what makes
-   them dangerous in practice.
-2. **Why raw-PCA distance fails on mast cells (0.479, chance) yet wins on tip-like ECs
-   (0.779):** in uncorrected space *every* query cell is far from the reference, so distance
-   measures the batch, drowning the strong novelty signal of a distinct lineage. But that same
-   lack of correction means the embedding has not been trained to pull query cells onto their
-   reference sibling — the failure and the advantage share one cause.
-3. **Deleting a type barely dents the rest** (macro-F1 on the remaining seen subtypes stayed
-   0.68–0.76 across all runs), so the difficulty is detection, not collateral damage.
+### Second external cohort (Pelka et al., 2021)
 
-Together with the natural-gap result (best AUROC 0.674), the practical conclusion for atlas
-users: reference mapping plus a latent-distance flag will catch a genuinely new lineage, but
-**an unannotated subtype of a known lineage will be silently absorbed** — which argues for
-per-lineage novelty thresholds and for treating high-confidence calls within heterogeneous
-compartments (T cells, myeloid, tumour epithelium) with more suspicion than the global
-confidence suggests.
+To test false alarms under a shift with no novel populations, a 40,000-cell stratified subsample of the [Pelka et al., 2021](https://doi.org/10.1016/j.cell.2021.08.003) atlas (GSE178341: 62 patients, several hospitals, 10x v2 and v3) was mapped onto the same reference. All seven of its top-level populations exist in the reference.
 
-### A second external cohort: sensitivity vs false alarms
-
-KUL3 asked whether the novelty flag *fires* on unseen populations. The complementary question —
-does it stay *quiet* when everything is known but the data are shifted? — needs a cohort with
-no novel types. A 40,000-cell stratified subsample of the
-[Pelka et al., 2021](https://doi.org/10.1016/j.cell.2021.08.003) US atlas
-(GSE178341: 62 patients, multiple hospitals, 10x v2 **and** v3 chemistries) was mapped
-onto the same frozen reference; all seven of its top-level populations exist in the reference.
-
-- **Coarse labels transfer almost perfectly under the lab-and-chemistry shift:** macro-F1
-  **0.991** (95% CI 0.989–0.993 — a patient bootstrap over 62 patients, against
-  KUL3's six).
-- **False-alarm rate:** with the flag threshold fixed at the 95th percentile of KUL3
-  shared-subtype distances, 8.3% of Pelka cells are flagged — mildly above the 5%
-  baseline, so a second cohort shift does not blow the flag up.
-- **But the same threshold catches only 2.7% of KUL3's genuinely novel cells** —
-  fewer than it catches of ordinary shared cells. The distance *tail* belongs to shared-cell
-  outliers; the vocabulary-gap signal (fig. 5) lives in the middle of the distribution, where
-  a global threshold cannot reach it without flooding the queue with false alarms.
+- Coarse labels transfer well: macro-F1 **0.991** (95% CI 0.989 to 0.993, bootstrap over 62 patients).
+- With the novelty threshold at the 95th percentile of KUL3 shared-subtype distances, 8.3% of Pelka cells are flagged, slightly above the 5% expected.
+- The same threshold flags only 2.7% of KUL3's novel cells. Their distances are in the middle of the distribution, not the tail, so a single global threshold cannot separate them.
 
 <p align="center"><img src="results/figures/fig7_pelka.png" width="60%"></p>
 
-Taken together: latent distance is trustworthy for *lineage-level* novelty and stays roughly
-calm under cohort shift, but tail-thresholding is structurally unable to surface *subtype-level*
-gaps — consistent with the sibling-absorption result above.
-
 ### Integration quality (scib-metrics)
 
-On a 30,000-cell stratified subsample (batch = cohort, labels = major cell type), aggregate
-scores out of 1:
+30,000-cell stratified subsample, batch = cohort, labels = major cell type:
 
 | Embedding | Batch correction | Bio conservation | Total |
 |---|---|---|---|
@@ -158,111 +85,67 @@ scores out of 1:
 | scVI | 0.409 | 0.803 | 0.645 |
 | scANVI | **0.573** | **0.810** | **0.715** |
 
-scANVI leads on both axes — with the caveat, stated once more, that its training saw reference
-labels, so label-based conservation metrics favour it by construction. The full metric table is
-in [`results/tables/integration_scib.csv`](results/tables/integration_scib.csv).
+scANVI was trained with reference labels, so label-based conservation metrics favour it. Full table: [`results/tables/integration_scib.csv`](results/tables/integration_scib.csv).
 
-
-## Methods compared
+## Methods
 
 | Method | Idea | Batch handling |
 |---|---|---|
-| Logistic regression | L2 multinomial on scaled log-normalised HVGs (the [CellTypist](https://doi.org/10.1126/science.abl5197) recipe) | none |
-| kNN on PCA | project query into reference PCA, vote among neighbours | none |
-| scVI + kNN | kNN vote in the latent space of an [scVI](https://doi.org/10.1038/s41592-018-0229-2) variational autoencoder | learned |
-| scANVI | semi-supervised VAE with a built-in classifier head ([Xu et al., 2021](https://doi.org/10.15252/msb.20209620)) | learned |
+| Logistic regression | L2 multinomial on scaled log-normalised HVGs ([CellTypist](https://doi.org/10.1126/science.abl5197) recipe) | none |
+| kNN on PCA | project the query into reference PCA, vote among neighbours | none |
+| scVI + kNN | kNN vote in the latent space of [scVI](https://doi.org/10.1038/s41592-018-0229-2) | learned |
+| scANVI | semi-supervised VAE with a classifier head ([Xu et al., 2021](https://doi.org/10.15252/msb.20209620)) | learned |
 
-The query is mapped into the scVI/scANVI models by **architecture surgery**
-([scArches](https://doi.org/10.1038/s41587-021-01001-7)): the reference network is frozen and only
-query-batch parameters are trained, so the reference embedding — and everything learned from it —
-stays fixed. Each classifier also emits a per-cell **novelty score** (classifier uncertainty, or
-distance to the nearest reference cells in the shared latent space), which is what the open-set
-experiments evaluate.
+The query is mapped into scVI/scANVI with [scArches](https://doi.org/10.1038/s41587-021-01001-7): reference weights are frozen and only query-batch parameters are trained. Each method also gives a per-cell novelty score (classifier uncertainty or latent distance to the nearest reference cells).
 
-## Design decisions that matter
+Design choices:
 
-- **The query never leaks into training.** Highly variable genes are selected on the reference
-  only; query labels are never shown to any model; scArches keeps reference weights frozen.
-- **Label vocabularies are harmonised in code, not by hand-waving.** The two cohorts were
-  annotated by the same group but their fine labels drifted (`SPP1+A/B` vs `SPP1+`, split
-  enterocyte subtypes). `src/scmap/labels.py` assigns every query subtype an explicit role —
-  *shared* (scored), *novel* (a real population absent from the reference; scored only as a
-  novelty target), or *excluded* (uninformative labels like "Unknown") — and
-  `results/tables/label_roles.csv` documents every decision. An unmapped label raises an error
-  rather than silently polluting the scores.
-- **Patient-level bootstrap.** Cells from one patient are not independent samples; all 95% CIs
-  come from resampling *patients*, not cells. Cell-level CIs would be misleadingly narrow.
-- **Two kinds of open-set test.** *Natural:* three populations the reference annotation simply
-  lacks (`Anti-inflammatory` macrophages, `BEST4+ Enterocytes`, `Tuft cells`). *Controlled:* six
-  cell types deleted from the reference one at a time — spanning easy cases (a distinct lineage
-  like mast cells) and hard ones (regulatory T cells, with close relatives still present) — then
-  asking whether each method flags the deleted type in the query or confidently mislabels it.
-- **Integration quality is measured, not eyeballed.** [scib-metrics](https://doi.org/10.1038/s41592-021-01336-8)
-  batch-correction and bio-conservation scores on all three embeddings, with the caveat stated
-  where it belongs: scANVI saw reference labels, so label-based conservation metrics favour it
-  by construction.
+- **No query leakage.** HVGs are selected on the reference only, query labels are never used in training, and reference weights stay frozen.
+- **Label harmonisation in code.** Fine labels differ between the two cohorts. `src/scmap/labels.py` marks every query subtype as shared (scored), novel (scored only for novelty) or excluded (e.g. "Unknown"); all decisions are listed in `results/tables/label_roles.csv`, and an unmapped label raises an error.
+- **Patient-level bootstrap** for all confidence intervals.
+- **Two open-set tests:** three populations missing from the reference annotation, and six cell types deleted one at a time.
 
 ## Reproduce
 
-Requires [uv](https://docs.astral.sh/uv/) and ~2 GB of disk. Data download is two public GEO
-series ([GSE132465](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132465),
-[GSE144735](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE144735)).
+Requires [uv](https://docs.astral.sh/uv/) and ~2 GB of disk. Data: GEO [GSE132465](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132465) and [GSE144735](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE144735).
 
 ```bash
 uv sync
 make data          # download both cohorts from GEO (~190 MB)
-make all           # prepare → transfer → open-set → integration → figures
+make all           # prepare, transfer, open-set, integration, figures
 make test          # unit tests
 ```
 
-Every setting lives in `configs/default.yaml`. On an Apple M-series laptop the main experiment
-runs in under an hour; the six open-set retrainings take a few hours (they use a shorter,
-documented schedule).
+Settings are in `configs/default.yaml`. On an Apple M-series laptop the main experiment runs in under an hour; the six open-set retrainings take a few hours with a shorter, documented training schedule.
 
 ## Repository layout
 
 ```
-configs/default.yaml         all experiment settings
+configs/default.yaml         experiment settings
 src/scmap/
-  labels.py                  cross-cohort label harmonisation with explicit roles
+  labels.py                  cross-cohort label harmonisation
   data.py                    streaming GEO matrix reader
   preprocess.py              reference-only HVG selection, normalisation
   baselines.py               logistic regression, kNN transfer, novelty scores
-  models.py                  scVI/scANVI training, scArches query surgery
-  pipeline.py                one reference→query run shared by all experiments
+  models.py                  scVI/scANVI training, scArches query mapping
+  pipeline.py                reference-to-query run shared by all experiments
   evaluate.py                patient bootstrap, per-class F1, novelty AUROC
-scripts/01…05_*.py           pipeline steps (wired into the Makefile)
+scripts/01…07_*.py           pipeline steps (Makefile)
 tests/                       pytest suite, run in CI
-results/tables, figures      every number and figure in this README
+results/tables, figures      all numbers and figures in this README
 ```
 
 ## Limitations
 
-- **One tissue, one platform, six query patients.** Both cohorts are 10x CRC data annotated by
-  the same group; a reference from a different lab, chemistry or tissue would shift harder.
-  Six patients also make the bootstrap intervals coarse.
-- **"Novel" means absent from the reference *annotation*, not from the reference *tissue*.**
-  Anti-inflammatory macrophages likely exist in SMC tumours unlabelled — which is precisely why
-  vocabulary gaps are harder to detect than physically deleted cell types.
-- **Fine labels are partly conventions.** CMS subtypes and polarisation states discretise
-  continua; some "errors" are disagreements about where to cut, not mistakes. The coarse/fine
-  gap (0.997 vs 0.754) is partly a property of the label scheme itself.
-- **Open-set runs use a shortened training schedule** (documented in `configs/default.yaml`) to
-  keep six full retrainings tractable on a laptop; absolute AUROCs may shift slightly with the
-  full schedule.
-- **scib-metrics caveat repeated:** scANVI trained on reference labels, so label-based
-  bio-conservation metrics structurally favour it.
+- One tissue, one platform, six query patients; both main cohorts were annotated by the same group, and six patients give coarse intervals.
+- "Novel" means absent from the reference annotation, not from the tissue: anti-inflammatory macrophages probably exist unlabelled in SMC.
+- Fine labels such as CMS subtypes and polarisation states split continuous biology, so some errors are disagreements about boundaries.
+- Open-set runs use a shorter training schedule; absolute AUROCs may shift slightly with the full schedule.
 
-## Data and references
+## References
 
-- Data: Lee et al., *Lineage-dependent gene expression programs influence the immune landscape
-  of colorectal cancer*, [Nat Genet 2020](https://doi.org/10.1038/s41588-020-0636-z) (GEO
-  GSE132465, GSE144735).
-- scVI ([Lopez et al., 2018](https://doi.org/10.1038/s41592-018-0229-2)); scANVI
-  ([Xu et al., 2021](https://doi.org/10.15252/msb.20209620)); scArches
-  ([Lotfollahi et al., 2022](https://doi.org/10.1038/s41587-021-01001-7)); implemented in
-  [scvi-tools](https://doi.org/10.1038/s41587-021-01206-w).
-- Integration metrics: [scib-metrics](https://doi.org/10.1038/s41592-021-01336-8).
+- Lee et al., [Nat Genet 2020](https://doi.org/10.1038/s41588-020-0636-z) (GSE132465, GSE144735); Pelka et al., [Cell 2021](https://doi.org/10.1016/j.cell.2021.08.003) (GSE178341).
+- scVI ([Lopez et al., 2018](https://doi.org/10.1038/s41592-018-0229-2)), scANVI ([Xu et al., 2021](https://doi.org/10.15252/msb.20209620)), scArches ([Lotfollahi et al., 2022](https://doi.org/10.1038/s41587-021-01001-7)), [scvi-tools](https://doi.org/10.1038/s41587-021-01206-w), [scib-metrics](https://doi.org/10.1038/s41592-021-01336-8).
 
 ## License
 
