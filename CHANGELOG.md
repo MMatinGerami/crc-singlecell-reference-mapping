@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 (2026-09-29)
+
+- Weighted conformal prediction under covariate shift, tested and found not to recover the coverage loss (`scripts/12_weighted_conformal.py`); mapped probabilities and embeddings cached.
+- Two-hospital site-shift experiment on the Pelka atlas with single-site and mixed references (`scripts/13_site_shift_pelka.py`).
+- Dockerfile, `make docker`, pre-commit configuration.
+
 ## 0.3.0 (2026-09-28)
 
 - Per-lineage novelty thresholds tested and rejected (`scripts/10_per_lineage_novelty.py`).

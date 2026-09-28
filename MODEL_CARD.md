@@ -53,9 +53,13 @@ Accuracy varies by about 11 points between patients and by 14 points between tis
 | 95% | global | 0.950 | 0.914 | 0.89 to 0.94 | 1.3 |
 | 95% | per subtype | 0.954 | 0.919 | 0.90 to 0.93 | 8.4 |
 
-The guarantee holds exactly within the reference cohort and loses 3 to 4 points on the Belgian cohort. Per-subtype thresholds do not recover it, which points to a shift affecting all cell types rather than a few rare ones.
+The guarantee holds exactly within the reference cohort and loses 3 to 4 points on the Belgian cohort. Neither per-subtype thresholds nor weighted conformal prediction with density-ratio weights (0.864 to 0.867 at 90%) recover it, which points to a shift in the labels rather than in the inputs.
 
 **Novelty.** Per-lineage thresholds on latent distance were tested and rejected (AUROC 0.373 vs 0.674 for the global score; novel cells are not outliers within their assigned lineage). A deleted lineage with no close relative is detected by latent distance (AUROC 0.99); a deleted subtype with a close relative is mostly absorbed by it (AUROC 0.60 to 0.83). Populations missing from the reference annotation are detected at best at AUROC 0.67.
+
+## Site shift with consistent labels (Pelka et al., two hospitals)
+
+Logistic-regression baseline, 12 reference patients. Reference from the other hospital only: macro-F1 0.81 on DFCI, 0.91 on MGH. Reference of the same size drawn from both hospitals: 0.89 on both. Conformal coverage at nominal 90%: 0.91 (DFCI) and 0.87 (MGH) for either design.
 
 ## Reference size
 

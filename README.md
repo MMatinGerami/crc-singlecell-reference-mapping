@@ -121,6 +121,36 @@ by the label conventions, not by the size of the reference.
 
 <p align="center"><img src="results/figures/fig11_reference_size.png" width="60%"></p>
 
+### Shift-aware calibration does not recover the loss
+
+Weighted conformal prediction (Tibshirani et al., 2019) is the standard remedy when the
+shift is in the inputs: calibration cells are weighted by the estimated density ratio
+between query and calibration in the scANVI latent space, from a cross-fitted logistic
+classifier (`scripts/12_weighted_conformal.py`). Here it changes coverage on the query from
+0.864 to 0.867 at the 90% level and from 0.914 to 0.922 at 95%, while shrinking the
+effective calibration size from 11,051 to 2,393 cells. The classifier can barely separate the
+two cohorts in a latent space trained to mix batches, so the weights stay close to one, and
+the remaining coverage loss is not an input shift. Together with the per-subtype result
+above, this points to the labels: the same cell states were discretised differently in the
+two cohorts, and no reweighting of inputs can correct that.
+
+![weighted](results/figures/fig12_weighted_conformal.png)
+
+### Does a multi-hospital reference help? A controlled test on Pelka et al.
+
+The Pelka atlas was collected at two hospitals (MGH, 43 patients; DFCI, 19) with one
+consistent label set, which allows a site-shift experiment the Lee cohorts cannot. With the
+logistic-regression baseline and 12 reference patients, a reference drawn from the other
+hospital only gives macro-F1 0.81 on DFCI, while a reference of the same size drawn from both
+hospitals gives 0.89; tested on MGH the two designs are close (0.91 vs 0.89), because the
+single-site reference is then MGH itself with twice as many of its patients. Conformal
+coverage calibrated on held-out patients of the reference hospitals stays near 90% on DFCI
+and around 87% on MGH in both designs (`scripts/13_site_shift_pelka.py`). Including even a
+few patients from the target site closes most of the site gap; it does not remove the
+coverage loss.
+
+![site-shift](results/figures/fig13_site_shift_pelka.png)
+
 ### Integration quality (scib-metrics)
 
 30,000-cell stratified subsample, batch = cohort, labels = major cell type:
@@ -158,11 +188,17 @@ Requires [uv](https://docs.astral.sh/uv/) and ~2 GB of disk. Data: GEO [GSE13246
 ```bash
 uv sync
 make data          # download both cohorts from GEO (~190 MB)
-make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal, lineage, refsize
+make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal, lineage, refsize, weighted, siteshift
 make test          # unit tests
 ```
 
 Settings are in `configs/default.yaml`. On an Apple M-series laptop the main experiment runs in under an hour; the six open-set retrainings take a few hours with a shorter, documented training schedule.
+
+### Docker
+
+```bash
+make docker      # builds the image and runs the tests inside it; data/ and results/ are mounted
+```
 
 ## Repository layout
 
@@ -177,7 +213,7 @@ src/scmap/
   pipeline.py                reference-to-query run shared by all experiments
   evaluate.py                patient bootstrap, per-class F1, novelty AUROC
   conformal.py               split conformal prediction sets
-scripts/01…11_*.py           pipeline steps (Makefile)
+scripts/01…13_*.py           pipeline steps (Makefile)
 tests/                       pytest suite, run in CI
 results/tables, figures      all numbers and figures in this README
 ```

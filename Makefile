@@ -1,6 +1,6 @@
-.PHONY: all data prepare transfer openset integration figures calibration pelka patients conformal lineage refsize test lint
+.PHONY: all data prepare transfer openset integration figures calibration pelka patients conformal lineage refsize weighted siteshift test lint docker
 
-all: prepare transfer openset integration figures calibration pelka patients conformal lineage refsize
+all: prepare transfer openset integration figures calibration pelka patients conformal lineage refsize weighted siteshift
 
 data:         ; bash scripts/download_data.sh
 prepare:      ; uv run python scripts/01_prepare_data.py
@@ -14,5 +14,8 @@ patients:     ; uv run python scripts/08_per_patient.py
 conformal:    ; uv run python scripts/09_conformal_shift.py
 lineage:      ; uv run python scripts/10_per_lineage_novelty.py
 refsize:      ; uv run python scripts/11_reference_size.py
+weighted:     ; uv run python scripts/12_weighted_conformal.py
+siteshift:    ; uv run python scripts/13_site_shift_pelka.py
+docker:       ; docker build -t scmap . && docker run --rm -v "$$PWD/data:/app/data" -v "$$PWD/results:/app/results" scmap make test
 test:         ; uv run pytest -q
 lint:         ; uv run ruff check . && uv run ruff format --check .
