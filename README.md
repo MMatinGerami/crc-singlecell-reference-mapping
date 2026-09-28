@@ -95,6 +95,32 @@ so the shift affects all cell types rather than a few rare ones
 
 ![conformal-shift](results/figures/fig9_conformal_shift.png)
 
+### Per-lineage novelty thresholds do not help
+
+An earlier version of this README suggested setting the novelty threshold per lineage. Tested
+(`scripts/10_per_lineage_novelty.py`), it makes things worse: standardising each cell's latent
+distance within its predicted major lineage lowers the AUROC for the three populations missing
+from the reference annotation from 0.674 to 0.373, and at a 5% false-alarm rate the
+per-lineage thresholds catch 2.5% of novel cells against 2.7% for the global one. The left
+panel shows why: the novel cells (orange) sit inside the distance distribution of the
+epithelial and myeloid lineages they are assigned to. The modest global AUROC therefore came
+from those lineages being further from the reference in general, not from the novel cells
+being unusual within them. Detecting an unannotated subtype needs a different signal than
+distance to the nearest reference cells.
+
+![per-lineage](results/figures/fig10_per_lineage_novelty.png)
+
+### How many reference patients are needed
+
+Label transfer with the logistic-regression baseline, repeated on random subsets of the
+reference patients with genes reselected each time (`scripts/11_reference_size.py`): three
+patients give unstable results (fine macro-F1 0.42 to 0.72 across draws), six give 0.72,
+and from ten patients on the curve is flat (0.73 to 0.74; the full 23 patients give 0.74).
+Coarse accuracy is above 0.98 even with three patients. The ceiling on fine subtypes is set
+by the label conventions, not by the size of the reference.
+
+<p align="center"><img src="results/figures/fig11_reference_size.png" width="60%"></p>
+
 ### Integration quality (scib-metrics)
 
 30,000-cell stratified subsample, batch = cohort, labels = major cell type:
@@ -132,7 +158,7 @@ Requires [uv](https://docs.astral.sh/uv/) and ~2 GB of disk. Data: GEO [GSE13246
 ```bash
 uv sync
 make data          # download both cohorts from GEO (~190 MB)
-make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal
+make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal, lineage, refsize
 make test          # unit tests
 ```
 
@@ -151,7 +177,7 @@ src/scmap/
   pipeline.py                reference-to-query run shared by all experiments
   evaluate.py                patient bootstrap, per-class F1, novelty AUROC
   conformal.py               split conformal prediction sets
-scripts/01…09_*.py           pipeline steps (Makefile)
+scripts/01…11_*.py           pipeline steps (Makefile)
 tests/                       pytest suite, run in CI
 results/tables, figures      all numbers and figures in this README
 ```

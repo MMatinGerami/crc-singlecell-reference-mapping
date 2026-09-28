@@ -55,7 +55,11 @@ Accuracy varies by about 11 points between patients and by 14 points between tis
 
 The guarantee holds exactly within the reference cohort and loses 3 to 4 points on the Belgian cohort. Per-subtype thresholds do not recover it, which points to a shift affecting all cell types rather than a few rare ones.
 
-**Novelty.** A deleted lineage with no close relative is detected by latent distance (AUROC 0.99); a deleted subtype with a close relative is mostly absorbed by it (AUROC 0.60 to 0.83). Populations missing from the reference annotation are detected at best at AUROC 0.67.
+**Novelty.** Per-lineage thresholds on latent distance were tested and rejected (AUROC 0.373 vs 0.674 for the global score; novel cells are not outliers within their assigned lineage). A deleted lineage with no close relative is detected by latent distance (AUROC 0.99); a deleted subtype with a close relative is mostly absorbed by it (AUROC 0.60 to 0.83). Populations missing from the reference annotation are detected at best at AUROC 0.67.
+
+## Reference size
+
+With the logistic-regression baseline, fine-subtype macro-F1 on the query is 0.42 to 0.72 with 3 reference patients, 0.72 with 6, and 0.73 to 0.74 from 10 patients upwards (0.74 with all 23). Coarse accuracy exceeds 0.98 with 3 patients.
 
 ## Limitations
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 (2026-09-28)
+
+- Per-lineage novelty thresholds tested and rejected (`scripts/10_per_lineage_novelty.py`).
+- Transfer accuracy vs number of reference patients (`scripts/11_reference_size.py`).
+- Citation file.
+
 ## 0.2.0 (2026-09-28)
 
 - Per-patient and per-tissue accuracy on the query cohort (`scripts/08_per_patient.py`).
