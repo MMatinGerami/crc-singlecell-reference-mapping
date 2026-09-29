@@ -145,12 +145,16 @@ The Pelka atlas was collected at two hospitals (MGH, 43 patients; DFCI, 19) with
 consistent label set, which allows a site-shift experiment the Lee cohorts cannot. With the
 logistic-regression baseline and 12 reference patients, a reference drawn from the other
 hospital only gives macro-F1 0.81 on DFCI, while a reference of the same size drawn from both
-hospitals gives 0.89; tested on MGH the two designs are close (0.91 vs 0.89), because the
-single-site reference is then MGH itself with twice as many of its patients. Conformal
+hospitals gives 0.89; tested on MGH the two designs are close (0.91 vs 0.89): a DFCI-only
+reference transfers to MGH better than the reverse, so the shift is asymmetric. Conformal
 coverage calibrated on held-out patients of the reference hospitals stays near 90% on DFCI
 and around 87% on MGH in both designs (`scripts/13_site_shift_pelka.py`). Including even a
 few patients from the target site closes most of the site gap; it does not remove the
-coverage loss.
+coverage loss. With scANVI and scArches mapping in place of the baseline (one draw per
+setting, `scripts/15_site_shift_pelka_scanvi.py`) the mixed reference helps on both
+hospitals, macro-F1 0.82 to 0.92 on DFCI and 0.88 to 0.93 on MGH, and coverage at the 90%
+target rises from 0.90 and 0.87 to 0.94 on both, so for the deep model a mixed reference
+also repairs the calibration.
 
 ![site-shift](results/figures/fig13_site_shift_pelka.png)
 
@@ -191,7 +195,7 @@ Requires [uv](https://docs.astral.sh/uv/) and ~2 GB of disk. Data: GEO [GSE13246
 ```bash
 uv sync
 make data          # download both cohorts from GEO (~190 MB)
-make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal, lineage, refsize, weighted, siteshift
+make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal, lineage, refsize, weighted, siteshift, refsize-scanvi, siteshift-scanvi
 make test          # unit tests
 scmap annotate my_query.h5ad --target 0.95 -o labels.csv   # label a new dataset with the saved reference
 ```

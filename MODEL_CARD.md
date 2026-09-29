@@ -59,7 +59,7 @@ The guarantee holds exactly within the reference cohort and loses 3 to 4 points 
 
 ## Site shift with consistent labels (Pelka et al., two hospitals)
 
-Logistic-regression baseline, 12 reference patients. Reference from the other hospital only: macro-F1 0.81 on DFCI, 0.91 on MGH. Reference of the same size drawn from both hospitals: 0.89 on both. Conformal coverage at nominal 90%: 0.91 (DFCI) and 0.87 (MGH) for either design.
+Logistic-regression baseline, 12 reference patients. Reference from the other hospital only: macro-F1 0.81 on DFCI, 0.91 on MGH. Reference of the same size drawn from both hospitals: 0.89 on both. Conformal coverage at nominal 90%: 0.91 (DFCI) and 0.87 (MGH) for either design. scANVI with scArches mapping, one draw: single-site reference 0.82 (DFCI) and 0.88 (MGH), mixed reference 0.92 and 0.93; coverage 0.90 and 0.87 single-site, 0.94 and 0.94 mixed.
 
 ## Reference size
 
