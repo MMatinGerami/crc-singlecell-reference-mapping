@@ -63,7 +63,7 @@ Logistic-regression baseline, 12 reference patients. Reference from the other ho
 
 ## Reference size
 
-With the logistic-regression baseline, fine-subtype macro-F1 on the query is 0.42 to 0.72 with 3 reference patients, 0.72 with 6, and 0.73 to 0.74 from 10 patients upwards (0.74 with all 23). Coarse accuracy exceeds 0.98 with 3 patients.
+With the logistic-regression baseline, fine-subtype macro-F1 on the query is 0.42 to 0.72 with 3 reference patients, 0.72 with 6, and 0.73 to 0.74 from 10 patients upwards (0.74 with all 23). Coarse accuracy exceeds 0.98 with 3 patients. scANVI with scArches mapping, one draw per size: 0.39, 0.73, 0.73, 0.75, 0.74 for 3, 6, 10, 15 and 23 patients.
 
 ## Limitations
 

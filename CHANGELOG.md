@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Reference-size curve repeated with scANVI and scArches mapping (`scripts/14_reference_size_scanvi.py`); same plateau from six patients as the baseline.
+
 ## 0.4.0 (2026-09-29)
 
 - Weighted conformal prediction under covariate shift, tested and found not to recover the coverage loss (`scripts/12_weighted_conformal.py`); mapped probabilities and embeddings cached.

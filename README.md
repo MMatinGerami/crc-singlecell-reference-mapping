@@ -117,9 +117,12 @@ reference patients with genes reselected each time (`scripts/11_reference_size.p
 patients give unstable results (fine macro-F1 0.42 to 0.72 across draws), six give 0.72,
 and from ten patients on the curve is flat (0.73 to 0.74; the full 23 patients give 0.74).
 Coarse accuracy is above 0.98 even with three patients. The ceiling on fine subtypes is set
-by the label conventions, not by the size of the reference.
+by the label conventions, not by the size of the reference. Repeating the curve with scANVI
+itself (`scripts/14_reference_size_scanvi.py`, one draw per size, scArches mapping) gives the
+same picture: 0.39 with three patients, 0.73 with six, 0.74 with all 23, with patient-bootstrap
+intervals of about 0.05.
 
-<p align="center"><img src="results/figures/fig11_reference_size.png" width="60%"></p>
+<p align="center"><img src="results/figures/fig14_reference_size_scanvi.png" width="60%"></p>
 
 ### Shift-aware calibration does not recover the loss
 
