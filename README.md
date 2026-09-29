@@ -14,6 +14,10 @@ Built in September 2026, at the start of my M1.
 | Abstention | Rejecting the 20% least-confident scANVI calls raises accuracy on the rest from 0.82 to **0.89** |
 | Open-set detection | A deleted lineage with no close relative is flagged by latent distance (mast cells, enteric glia: AUROC 0.99); a deleted subtype with a close relative is mostly absorbed by it (96% of tip-like ECs called "stalk-like"; best AUROC 0.60 to 0.83) |
 | Annotation gaps | The three populations missing from the reference annotation are detected at best at AUROC 0.674, likely because similar cells exist in the reference under other labels |
+| Per patient | scANVI fine-subtype accuracy ranges from 0.76 to 0.87 across the six query patients; 0.76 in tumour tissue against 0.90 in normal tissue |
+| Coverage under cohort shift | Conformal sets calibrated on held-out reference patients cover **86.4%** of query cells at a 90% target; density-ratio weighting does not recover it (86.7%) |
+| Hospital shift (Pelka, two hospitals) | A reference drawn from both hospitals instead of one raises scANVI macro-F1 from 0.82 to **0.92** on the smaller hospital and restores 90% coverage (0.87–0.90 → **0.94**) |
+| Calibration | scANVI is over-confident (ECE 0.125 on the query); one temperature fitted on reference patients halves it (**0.063**) and transfers across cohorts |
 
 <p align="center"><img src="results/figures/fig1_umap_scanvi.png" width="85%"></p>
 
