@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Calibration of scANVI confidence under the cohort shift, with temperature scaling fitted on reference patients (`scmap.calibration`, `scripts/16_calibration_shift.py`).
 - Two-hospital site-shift experiment repeated with scANVI (`scripts/15_site_shift_pelka_scanvi.py`): a mixed reference raises macro-F1 and restores 90% coverage on both hospitals.
 - `scmap annotate` command: maps a new query onto the saved scANVI reference and labels its cells with confidence and the pre-committed abstention flag.
 - Reference-size curve repeated with scANVI and scArches mapping (`scripts/14_reference_size_scanvi.py`); same plateau from six patients as the baseline.

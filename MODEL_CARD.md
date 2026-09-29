@@ -61,6 +61,10 @@ The guarantee holds exactly within the reference cohort and loses 3 to 4 points 
 
 Logistic-regression baseline, 12 reference patients. Reference from the other hospital only: macro-F1 0.81 on DFCI, 0.91 on MGH. Reference of the same size drawn from both hospitals: 0.89 on both. Conformal coverage at nominal 90%: 0.91 (DFCI) and 0.87 (MGH) for either design. scANVI with scArches mapping, one draw: single-site reference 0.82 (DFCI) and 0.88 (MGH), mixed reference 0.92 and 0.93; coverage 0.90 and 0.87 single-site, 0.94 and 0.94 mixed.
 
+## Calibration of the confidence
+
+ECE 0.090 on held-out reference patients and 0.125 on KUL3 (mean confidence 0.96 against accuracy 0.87 and 0.835). Temperature scaling fitted on the reference patients (T = 1.94) gives 0.024 and 0.063 (`scripts/16_calibration_shift.py`).
+
 ## Reference size
 
 With the logistic-regression baseline, fine-subtype macro-F1 on the query is 0.42 to 0.72 with 3 reference patients, 0.72 with 6, and 0.73 to 0.74 from 10 patients upwards (0.74 with all 23). Coarse accuracy exceeds 0.98 with 3 patients. scANVI with scArches mapping, one draw per size: 0.39, 0.73, 0.73, 0.75, 0.74 for 3, 6, 10, 15 and 23 patients.

@@ -139,6 +139,20 @@ two cohorts, and no reweighting of inputs can correct that.
 
 ![weighted](results/figures/fig12_weighted_conformal.png)
 
+### Is the confidence calibrated, and does calibration survive the shift?
+
+scANVI's confidence is over-confident even on held-out patients of its own cohort: mean
+confidence 0.96 against accuracy 0.87 on the five calibration patients (expected calibration
+error 0.090), and 0.96 against 0.835 on KUL3 (ECE 0.125). One temperature fitted on the
+calibration patients (T = 1.94, `scripts/16_calibration_shift.py`, `scmap.calibration`)
+brings the reference ECE to 0.024 and, applied unchanged, halves the query ECE to 0.063; per
+KUL3 patient it drops from 0.08 to 0.17 raw to 0.04 to 0.09 scaled. So the shape of the
+over-confidence transfers across cohorts and a cheap post-hoc fix carries over, even though
+the abstention thresholds above did not: calibrating the probabilities is a different
+problem from guaranteeing coverage.
+
+![calibration](results/figures/fig16_calibration_shift.png)
+
 ### Does a multi-hospital reference help? A controlled test on Pelka et al.
 
 The Pelka atlas was collected at two hospitals (MGH, 43 patients; DFCI, 19) with one
@@ -195,7 +209,7 @@ Requires [uv](https://docs.astral.sh/uv/) and ~2 GB of disk. Data: GEO [GSE13246
 ```bash
 uv sync
 make data          # download both cohorts from GEO (~190 MB)
-make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal, lineage, refsize, weighted, siteshift, refsize-scanvi, siteshift-scanvi
+make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal, lineage, refsize, weighted, siteshift, refsize-scanvi, siteshift-scanvi, calibration-shift
 make test          # unit tests
 scmap annotate my_query.h5ad --target 0.95 -o labels.csv   # label a new dataset with the saved reference
 ```
