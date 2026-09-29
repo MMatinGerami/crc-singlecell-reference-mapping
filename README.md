@@ -193,6 +193,7 @@ uv sync
 make data          # download both cohorts from GEO (~190 MB)
 make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal, lineage, refsize, weighted, siteshift
 make test          # unit tests
+scmap annotate my_query.h5ad --target 0.95 -o labels.csv   # label a new dataset with the saved reference
 ```
 
 Settings are in `configs/default.yaml`. On an Apple M-series laptop the main experiment runs in under an hour; the six open-set retrainings take a few hours with a shorter, documented training schedule.

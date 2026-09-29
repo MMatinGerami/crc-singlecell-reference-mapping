@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `scmap annotate` command: maps a new query onto the saved scANVI reference and labels its cells with confidence and the pre-committed abstention flag.
 - Reference-size curve repeated with scANVI and scArches mapping (`scripts/14_reference_size_scanvi.py`); same plateau from six patients as the baseline.
 
 ## 0.4.0 (2026-09-29)
