@@ -1,6 +1,6 @@
 .PHONY: all data prepare transfer openset integration figures calibration pelka patients conformal lineage refsize weighted siteshift refsize-scanvi siteshift-scanvi test lint docker
 
-all: prepare transfer openset integration figures calibration pelka patients conformal lineage refsize weighted siteshift
+all: prepare transfer openset integration figures calibration pelka patients conformal lineage refsize weighted siteshift refsize-scanvi siteshift-scanvi
 
 data:         ; bash scripts/download_data.sh
 prepare:      ; uv run python scripts/01_prepare_data.py
