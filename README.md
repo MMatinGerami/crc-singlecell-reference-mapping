@@ -235,7 +235,9 @@ src/scmap/
   pipeline.py                reference-to-query run shared by all experiments
   evaluate.py                patient bootstrap, per-class F1, novelty AUROC
   conformal.py               split conformal prediction sets
-scripts/01…13_*.py           pipeline steps (Makefile)
+  calibration.py             temperature scaling, reliability curves
+  cli.py                     `scmap annotate`
+scripts/01…16_*.py           pipeline steps (Makefile)
 tests/                       pytest suite, run in CI
 results/tables, figures      all numbers and figures in this README
 ```

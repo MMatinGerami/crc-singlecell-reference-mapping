@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 (2026-09-29)
 
 - Calibration of scANVI confidence under the cohort shift, with temperature scaling fitted on reference patients (`scmap.calibration`, `scripts/16_calibration_shift.py`).
 - Two-hospital site-shift experiment repeated with scANVI (`scripts/15_site_shift_pelka_scanvi.py`): a mixed reference raises macro-F1 and restores 90% coverage on both hospitals.
