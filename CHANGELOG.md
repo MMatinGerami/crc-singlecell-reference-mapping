@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Residual doublets (`scripts/17_doublets.py`, `make doublets`): Scrublet calls 0.2% of query cells doublets; they are mislabelled 50 to 80 times more often than singlets, and the scANVI latent-distance novelty score ranks them far better (AUROC 0.86) than softmax confidence (0.72). Adds `scikit-image` for Scrublet's automatic threshold.
+
 ## 0.5.0 (2026-09-29)
 
 - Calibration of scANVI confidence under the cohort shift, with temperature scaling fitted on reference patients (`scmap.calibration`, `scripts/16_calibration_shift.py`).

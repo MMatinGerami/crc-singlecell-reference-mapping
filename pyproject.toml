@@ -17,6 +17,7 @@ dependencies = [
     "pyyaml>=6.0.3",
     "scanpy>=1.12.4",
     "scib-metrics>=0.6.1",
+    "scikit-image>=0.26.0",
     "scikit-learn>=1.9.1",
     "scvi-tools>=1.5.1",
     "seaborn>=0.13.2",
