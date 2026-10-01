@@ -157,6 +157,20 @@ problem from guaranteeing coverage.
 
 ![calibration](results/figures/fig16_calibration_shift.png)
 
+### Do residual doublets fool the annotation, and does the novelty score catch them?
+
+Two cells in one droplet give a hybrid profile that no single label fits. The query annotations were filtered by their authors, so this asks about the doublets that survived. `scripts/17_doublets.py` scores every sample with Scrublet ([Wolock et al., 2019](https://doi.org/10.1016/j.cels.2018.11.005), scanpy implementation, automatic threshold; the 75-cell KUL31-T sample is too small to score) and relates the call to each method's coarse error and novelty score.
+
+| Method | Coarse error, predicted doublets vs singlets | AUROC of the novelty score for doublets (95% CI) | Doublets among the 10% most novel cells |
+|---|---|---|---|
+| scANVI, latent distance | 16% vs 0.2% | **0.86** (0.81 to 0.91) | **63%** |
+| scVI + kNN | 24% vs 0.3% | 0.80 (0.74 to 0.86) | 55% |
+| PCA + kNN | 15% vs 0.2% | 0.78 (0.72 to 0.84) | 50% |
+| scANVI, 1 − confidence | 16% vs 0.2% | 0.72 (0.66 to 0.77) | 20% |
+| Logistic regression, 1 − confidence | 20% vs 0.4% | 0.65 (0.57 to 0.72) | 22% |
+
+Only 60 of 27,339 scored cells (0.2%) are called doublets, so the authors' filtering removed most of them, but the ones left are mislabelled 50 to 80 times more often than singlets. Distance in the latent space flags them far better than the classifier's own confidence: abstaining on the 10% most distant cells removes 63% of the residual doublets, against 20% for the softmax score. A doublet sits between two cell-type clusters, which is far from every reference cell, while a classifier forced to choose between two plausible labels can still be confident about one of them. This supports using a distance-based novelty score for abstention. With 60 doublets the intervals are wide, and "error" means disagreeing with the authors' single label for a two-cell profile.
+
 ### Does a multi-hospital reference help? A controlled test on Pelka et al.
 
 The Pelka atlas was collected at two hospitals (MGH, 43 patients; DFCI, 19) with one
@@ -213,7 +227,7 @@ Requires [uv](https://docs.astral.sh/uv/) and ~2 GB of disk. Data: GEO [GSE13246
 ```bash
 uv sync
 make data          # download both cohorts from GEO (~190 MB)
-make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal, lineage, refsize, weighted, siteshift, refsize-scanvi, siteshift-scanvi, calibration-shift
+make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal, lineage, refsize, weighted, siteshift, refsize-scanvi, siteshift-scanvi, calibration-shift, doublets
 make test          # unit tests
 scmap annotate my_query.h5ad --target 0.95 -o labels.csv   # label a new dataset with the saved reference
 ```

@@ -1,6 +1,6 @@
-.PHONY: all data prepare transfer openset integration figures calibration pelka patients conformal lineage refsize weighted siteshift refsize-scanvi siteshift-scanvi calibration-shift test lint docker
+.PHONY: all data prepare transfer openset integration figures calibration pelka patients conformal lineage refsize weighted siteshift refsize-scanvi siteshift-scanvi calibration-shift doublets test lint docker
 
-all: prepare transfer openset integration figures calibration pelka patients conformal lineage refsize weighted siteshift refsize-scanvi siteshift-scanvi calibration-shift
+all: prepare transfer openset integration figures calibration pelka patients conformal lineage refsize weighted siteshift refsize-scanvi siteshift-scanvi calibration-shift doublets
 
 data:         ; bash scripts/download_data.sh
 prepare:      ; uv run python scripts/01_prepare_data.py
@@ -19,6 +19,7 @@ siteshift:    ; uv run python scripts/13_site_shift_pelka.py
 refsize-scanvi: ; uv run python scripts/14_reference_size_scanvi.py
 siteshift-scanvi: ; uv run python scripts/15_site_shift_pelka_scanvi.py
 calibration-shift: ; uv run python scripts/16_calibration_shift.py
+doublets: ; uv run python scripts/17_doublets.py
 docker:       ; docker build -t scmap . && docker run --rm -v "$$PWD/data:/app/data" -v "$$PWD/results:/app/results" scmap make test
 test:         ; uv run pytest -q
 lint:         ; uv run ruff check . && uv run ruff format --check .
