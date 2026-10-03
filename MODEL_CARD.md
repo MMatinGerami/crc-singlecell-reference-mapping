@@ -4,7 +4,7 @@ Research prototype. Not intended for clinical use.
 
 ## Model
 
-- **Task:** assign each cell of a new colorectal cancer scRNA-seq cohort one of 6 major cell types and one of 31 fine subtypes, and flag cells whose type is not in the reference.
+- **Task:** assign each cell of a new colorectal cancer scRNA-seq cohort one of 6 major cell types and one of 33 fine subtypes, and flag cells whose type is not in the reference.
 - **Model:** scVI (30 latent dimensions, 2 layers, 128 hidden units) trained on reference counts with sample as batch, then scANVI initialised from it. New cohorts are mapped with scArches: reference weights frozen, only query-batch parameters trained. Three baselines (logistic regression, kNN on PCA, scVI + kNN) are reported alongside.
 - **Input:** raw UMI counts for 3,000 highly variable genes selected on the reference.
 - **Output:** per-cell probabilities over the reference subtypes; a confidence score (max probability); a latent-distance novelty score; with `scripts/09_conformal_shift.py`, a set of candidate subtypes with a stated error rate.
@@ -21,19 +21,19 @@ Research prototype. Not intended for clinical use.
 | Level | scANVI | Logistic regression |
 |---|---|---|
 | Coarse (6 types), macro-F1 | 0.997 | 0.995 |
-| Fine (31 subtypes), macro-F1 | 0.754 (0.71 to 0.75) | 0.742 (0.70 to 0.74) |
+| Fine (33 subtypes), macro-F1 | 0.754 (0.71 to 0.75) | 0.742 (0.70 to 0.74) |
 | Fine accuracy | 0.82 | 0.82 |
 
 ## Performance by patient and tissue (fine subtypes, accuracy)
 
 | Subgroup | scANVI | Range across methods |
 |---|---|---|
-| KUL01 (4,307 cells) | 0.79 | 0.69 to 0.79 |
+| KUL01 (4,307 cells) | 0.79 | 0.69 to 0.80 |
 | KUL19 (7,704) | 0.85 | 0.84 to 0.85 |
 | KUL21 (4,293) | 0.76 | 0.66 to 0.76 |
 | KUL28 (1,688) | 0.85 | 0.83 to 0.86 |
 | KUL30 (3,157) | 0.87 | 0.86 to 0.90 |
-| KUL31 (2,069) | 0.83 | 0.80 to 0.83 |
+| KUL31 (2,069) | 0.83 | 0.79 to 0.83 |
 | Normal mucosa (9,095) | 0.90 | 0.85 to 0.91 |
 | Tumour border (6,230) | 0.79 | 0.77 to 0.79 |
 | Tumour core (7,893) | 0.76 | 0.69 to 0.77 |
@@ -53,9 +53,9 @@ Accuracy varies by about 11 points between patients and by 14 points between tis
 | 95% | global | 0.950 | 0.914 | 0.89 to 0.94 | 1.3 |
 | 95% | per subtype | 0.954 | 0.919 | 0.90 to 0.93 | 8.4 |
 
-The guarantee holds exactly within the reference cohort and loses 3 to 4 points on the Belgian cohort. Neither per-subtype thresholds nor weighted conformal prediction with density-ratio weights (0.864 to 0.867 at 90%) recover it, which points to a shift in the labels rather than in the inputs.
+Coverage on the calibration cells is nominal by construction; on the Belgian cohort it is 3 to 4 points below target. Neither per-subtype thresholds nor weighted conformal prediction with density-ratio weights (0.864 to 0.867 at 90%) recover it. A shift in the labels rather than the inputs is one explanation, not a tested one: the domain classifier behind the weights was cross-validated on unshuffled, patient-ordered folds, and patients within the reference also vary in coverage.
 
-**Novelty.** Per-lineage thresholds on latent distance were tested and rejected (AUROC 0.373 vs 0.674 for the global score; novel cells are not outliers within their assigned lineage). A deleted lineage with no close relative is detected by latent distance (AUROC 0.99); a deleted subtype with a close relative is mostly absorbed by it (AUROC 0.60 to 0.83). Populations missing from the reference annotation are detected at best at AUROC 0.67.
+**Novelty.** Per-lineage thresholds on latent distance were tested and rejected (AUROC 0.373 vs 0.674 for the global score; novel cells are not outliers within their assigned lineage). A deleted lineage with no close relative is detected by latent distance (AUROC 0.99); a deleted subtype with a close relative is mostly absorbed by it (AUROC 0.66 to 0.83). Populations missing from the reference annotation are detected at best at AUROC 0.67.
 
 ## Site shift with consistent labels (Pelka et al., two hospitals)
 

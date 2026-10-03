@@ -59,7 +59,7 @@ def fig_accuracy() -> None:
     for ax, level, title in zip(
         axes,
         ["coarse", "fine"],
-        ["Major cell types (6)", "Fine subtypes (shared, 31)"],
+        ["Major cell types (6)", "Fine subtypes (shared, 33)"],
         strict=True,
     ):
         m = (
