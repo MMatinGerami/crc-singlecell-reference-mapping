@@ -52,6 +52,23 @@ def patient_bootstrap(
     )
 
 
+def patient_bootstrap_auroc(
+    is_positive: np.ndarray, score: np.ndarray, patients: np.ndarray, n_boot: int, seed: int
+) -> tuple[float, float]:
+    """95% interval of the AUROC from a cluster bootstrap over patients. Resamples that draw
+    no positives (or no negatives) have no AUROC and are skipped."""
+    rng = np.random.default_rng(seed)
+    is_positive, score = np.asarray(is_positive, dtype=bool), np.asarray(score)
+    uniq = np.unique(patients)
+    idx_by_patient = {p: np.flatnonzero(patients == p) for p in uniq}
+    boots = []
+    for _ in range(n_boot):
+        idx = np.concatenate([idx_by_patient[p] for p in rng.choice(uniq, len(uniq))])
+        if 0 < is_positive[idx].sum() < len(idx):
+            boots.append(roc_auc_score(is_positive[idx], score[idx]))
+    return float(np.percentile(boots, 2.5)), float(np.percentile(boots, 97.5))
+
+
 def per_class_f1(y_true: np.ndarray, y_pred: np.ndarray) -> pd.Series:
     labels = np.unique(y_true)
     return pd.Series(

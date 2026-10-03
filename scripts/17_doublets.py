@@ -23,6 +23,8 @@ Outputs: results/tables/doublets_{per_cell.parquet,per_method.csv,per_sample.csv
 
 from __future__ import annotations
 
+import argparse
+
 import anndata as ad
 import numpy as np
 import pandas as pd
@@ -30,6 +32,7 @@ import scanpy as sc
 from sklearn.metrics import roc_auc_score
 
 from scmap.config import load_config
+from scmap.evaluate import patient_bootstrap_auroc
 
 MIN_CELLS = 200
 TOP_NOVEL = 0.10
@@ -58,16 +61,26 @@ def score_doublets(q: ad.AnnData, seed: int) -> pd.DataFrame:
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "--reuse-scores",
+        action="store_true",
+        help="summarise the saved doublets_per_cell.parquet instead of rerunning Scrublet",
+    )
+    args = ap.parse_args()
     cfg = load_config()
     res = cfg.path("results")
     tables = res / "tables"
-    q = ad.read_h5ad(cfg.path("processed") / "query.h5ad")
-    d = score_doublets(q, cfg.seed)
-    cells = q.obs[["patient", "sample", "tissue", "cell_type", "label_role"]].join(
-        d[["doublet_score", "predicted_doublet"]]
-    )
-    cells["predicted_doublet"] = cells["predicted_doublet"].astype("boolean")
-    cells.to_parquet(tables / "doublets_per_cell.parquet")
+    if args.reuse_scores:
+        cells = pd.read_parquet(tables / "doublets_per_cell.parquet")
+    else:
+        q = ad.read_h5ad(cfg.path("processed") / "query.h5ad")
+        d = score_doublets(q, cfg.seed)
+        cells = q.obs[["patient", "sample", "tissue", "cell_type", "label_role"]].join(
+            d[["doublet_score", "predicted_doublet"]]
+        )
+        cells["predicted_doublet"] = cells["predicted_doublet"].astype("boolean")
+        cells.to_parquet(tables / "doublets_per_cell.parquet")
 
     per_sample = (
         cells.groupby("sample", observed=True)
@@ -83,7 +96,6 @@ def main() -> None:
 
     preds = pd.read_parquet(tables / "predictions.parquet").set_index("cell")
     scored = cells[cells.doublet_score.notna()]
-    rng = np.random.default_rng(cfg.seed)
     rows = []
     for method, p in preds.groupby("method"):
         x = scored.join(p[["pred_coarse", "novelty"]], how="inner")
@@ -93,12 +105,11 @@ def main() -> None:
         k_d, n_d = int((wrong & dbl & shared).sum()), int((dbl & shared).sum())
         k_s, n_s = int((wrong & ~dbl & shared).sum()), int((~dbl & shared).sum())
         auc = roc_auc_score(dbl, x.novelty)
-        idx = np.arange(len(x))
-        boots = []
-        for _ in range(N_BOOT):
-            b = rng.choice(idx, len(idx))
-            if dbl.iloc[b].nunique() == 2:
-                boots.append(roc_auc_score(dbl.iloc[b], x.novelty.iloc[b]))
+        # cells of one patient are not independent: resample patients, as everywhere else
+        auc_low, auc_high = patient_bootstrap_auroc(
+            dbl.to_numpy(), x.novelty.to_numpy(), x.patient.to_numpy(), N_BOOT, cfg.seed
+        )
+        err_d, err_s = wilson(k_d, n_d), wilson(k_s, n_s)
         top = x.novelty >= x.novelty.quantile(1 - TOP_NOVEL)
         rows.append(
             dict(
@@ -106,11 +117,14 @@ def main() -> None:
                 cells=len(x),
                 predicted_doublets=int(dbl.sum()),
                 error_doublets=k_d / max(n_d, 1),
-                error_doublets_ci=wilson(k_d, n_d),
+                error_doublets_low=err_d[0],
+                error_doublets_high=err_d[1],
                 error_singlets=k_s / max(n_s, 1),
-                error_singlets_ci=wilson(k_s, n_s),
+                error_singlets_low=err_s[0],
+                error_singlets_high=err_s[1],
                 auroc_novelty_vs_doublet=auc,
-                auroc_ci=(np.quantile(boots, 0.025), np.quantile(boots, 0.975)),
+                auroc_low=auc_low,
+                auroc_high=auc_high,
                 doublet_share_overall=float(dbl.mean()),
                 doublet_share_top10_novel=float(dbl[top].mean()),
                 doublets_caught_by_top10=float((dbl & top).sum() / max(dbl.sum(), 1)),
