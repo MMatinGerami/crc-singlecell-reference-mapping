@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Residual doublets (`scripts/17_doublets.py`, `make doublets`): Scrublet calls 0.2% of query cells doublets; they are mislabelled 50 to 80 times more often than singlets, and the scANVI latent-distance novelty score ranks them far better (AUROC 0.86) than softmax confidence (0.72). Adds `scikit-image` for Scrublet's automatic threshold.
+- Text checked against the result tables: 33 shared fine subtypes (not 31; also in Fig 2), close-relative open-set AUROC 0.66 to 0.83, PCA + kNN ties scANVI as abstention signal, unfiltered accuracy of the calibration model 83.5%, Pelka subsample is random and from two hospitals, doublet column is the share caught, two per-patient ranges, `__version__` 0.5.0. Conformal text no longer presents in-sample calibration coverage as a result, and the label-shift reading is stated as a hypothesis.
+- Residual doublets (`scripts/17_doublets.py`, `make doublets`): Scrublet calls 0.2% of query cells doublets; they are mislabelled 56 to 88 times more often than singlets, and the scANVI latent-distance novelty score ranks them far better (AUROC 0.86) than softmax confidence (0.72). Adds `scikit-image` for Scrublet's automatic threshold.
 
 ## 0.5.0 (2026-09-29)
 

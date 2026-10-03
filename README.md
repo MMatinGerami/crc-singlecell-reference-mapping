@@ -9,10 +9,10 @@ Built in September 2026, at the start of my M1.
 | | Result |
 |---|---|
 | Coarse annotation | All four methods assign ≥99% of query cells to the correct major lineage (macro-F1 0.995 to 0.997, 6 classes) |
-| Fine subtypes | Best method (scANVI): **macro-F1 0.754** over 31 shared subtypes, 95% CI 0.71 to 0.75 (patient bootstrap); logistic regression: 0.742 |
+| Fine subtypes | Best method (scANVI): **macro-F1 0.754** over 33 shared subtypes, 95% CI 0.71 to 0.75 (patient bootstrap); logistic regression: 0.742 |
 | Where transfer fails | Discrete cell types transfer well (mast cells, enteric glia, CD19+CD20+ B cells: F1 ≈ 1.0); continuous states do not (proliferating myeloid 0.15, IgG+ plasma 0.26, tumour CMS subtypes 0.0 to 0.71) |
 | Abstention | Rejecting the 20% least-confident scANVI calls raises accuracy on the rest from 0.82 to **0.89** |
-| Open-set detection | A deleted lineage with no close relative is flagged by latent distance (mast cells, enteric glia: AUROC 0.99); a deleted subtype with a close relative is mostly absorbed by it (96% of tip-like ECs called "stalk-like"; best AUROC 0.60 to 0.83) |
+| Open-set detection | A deleted lineage with no close relative is flagged by latent distance (mast cells, enteric glia: AUROC 0.99); a deleted subtype with a close relative is mostly absorbed by it (96% of tip-like ECs called "stalk-like"; best AUROC 0.66 to 0.83) |
 | Annotation gaps | The three populations missing from the reference annotation are detected at best at AUROC 0.674, likely because similar cells exist in the reference under other labels |
 | Per patient | scANVI fine-subtype accuracy ranges from 0.76 to 0.87 across the six query patients; 0.76 in tumour tissue against 0.90 in normal tissue |
 | Coverage under cohort shift | Conformal sets calibrated on held-out reference patients cover **86.4%** of query cells at a 90% target; density-ratio weighting does not recover it (86.7%) |
@@ -38,7 +38,7 @@ Subtypes succeed or fail together across all four methods, so the limit is mostl
 <img src="results/figures/fig5_natural_novelty.png" width="46%">
 </p>
 
-Left: coverage vs accuracy. scANVI confidence gives the best abstention signal (0.94 accuracy at 50% coverage, 0.89 at 80%). Right: populations missing from the reference annotation lie further from the reference in scANVI latent space (tuft cells most clearly), but they overlap with the tail of shared types.
+Left: coverage vs accuracy. scANVI confidence and the PCA + kNN baseline give the best abstention signal (0.94 accuracy at 50% coverage, 0.89 at 80%; the two differ by less than 0.01). Right: populations missing from the reference annotation lie further from the reference in scANVI latent space (tuft cells most clearly), but they overlap with the tail of shared types.
 
 **Thresholds fixed in advance.** To choose an abstention threshold before seeing the query, five reference patients were held out as a calibration set, scVI and scANVI were retrained without them, and the threshold for each accuracy target was fixed on those patients, then applied to KUL3 (`scripts/06_calibrated_abstention.py`):
 
@@ -48,7 +48,7 @@ Left: coverage vs accuracy. scANVI confidence gives the best abstention signal (
 | 95% | 0.986 | 0.950 at 76.1% coverage | 0.906 at 77.8% coverage |
 | 98% | 0.999 | 0.980 at 54.0% coverage | 0.933 at 58.6% coverage |
 
-Coverage transfers almost exactly, but accuracy is about 4 points below target: the cohort shift moves the confidence distribution. A fixed threshold still helps (90.6% vs 82.3% unfiltered at the 95% target), but reliable guarantees would need shift-aware calibration.
+Coverage transfers almost exactly, but accuracy is about 4 points below target: the cohort shift moves the confidence distribution. A fixed threshold still helps (90.6% vs 83.5% unfiltered for the same model at the 95% target), but reliable guarantees would need shift-aware calibration.
 
 ### Open-set experiment
 
@@ -71,7 +71,7 @@ Six cell types were deleted from the reference one at a time. AUROC for ranking 
 
 ### Second external cohort (Pelka et al., 2021)
 
-To test false alarms under a shift with no novel populations, a 40,000-cell stratified subsample of the [Pelka et al., 2021](https://doi.org/10.1016/j.cell.2021.08.003) atlas (GSE178341: 62 patients, several hospitals, 10x v2 and v3) was mapped onto the same reference. All seven of its top-level populations exist in the reference.
+To test false alarms under a shift with no novel populations, a 40,000-cell random subsample of the [Pelka et al., 2021](https://doi.org/10.1016/j.cell.2021.08.003) atlas (GSE178341: 62 patients, two hospitals, 10x v2 and v3) was mapped onto the same reference. All seven of its top-level populations exist in the reference.
 
 - Coarse labels transfer well: macro-F1 **0.991** (95% CI 0.989 to 0.993, bootstrap over 62 patients).
 - With the novelty threshold at the 95th percentile of KUL3 shared-subtype distances, 8.3% of Pelka cells are flagged, slightly above the 5% expected.
@@ -91,10 +91,12 @@ patients, and every method does worse on tumour cells (scANVI 0.76) than on norm
 ### Conformal sets under cohort shift
 
 Split conformal prediction (score 1 - p(true subtype)) calibrated on the five held-out
-reference patients gives exactly the nominal coverage within the reference (0.900 and 0.950)
-and loses 3 to 4 points on the Belgian query (0.864 and 0.914), with per-patient coverage
-between 0.82 and 0.91 at the 90% level. Per-subtype thresholds do not recover the loss,
-so the shift affects all cell types rather than a few rare ones
+reference patients covers 0.864 and 0.914 of the Belgian query at the 90% and 95% levels,
+with per-patient coverage between 0.82 and 0.91 at the 90% level. (On the calibration cells
+themselves coverage is 0.900 and 0.950 by construction, so that is not a held-out check.)
+Per-subtype thresholds do not recover the loss, but several subtypes have fewer than nine
+calibration cells, which makes their 90% threshold infinite; whether the loss is spread over
+all types or concentrated in a few is not settled by this design
 (`scripts/09_conformal_shift.py`; full tables in [`MODEL_CARD.md`](MODEL_CARD.md)).
 
 ![conformal-shift](results/figures/fig9_conformal_shift.png)
@@ -135,11 +137,13 @@ shift is in the inputs: calibration cells are weighted by the estimated density 
 between query and calibration in the scANVI latent space, from a cross-fitted logistic
 classifier (`scripts/12_weighted_conformal.py`). Here it changes coverage on the query from
 0.864 to 0.867 at the 90% level and from 0.914 to 0.922 at 95%, while shrinking the
-effective calibration size from 11,051 to 2,393 cells. The classifier can barely separate the
-two cohorts in a latent space trained to mix batches, so the weights stay close to one, and
-the remaining coverage loss is not an input shift. Together with the per-subtype result
-above, this points to the labels: the same cell states were discretised differently in the
-two cohorts, and no reweighting of inputs can correct that.
+effective calibration size from 11,051 to 2,393 cells. Reweighting the inputs, as estimated
+here, does not recover the loss. One explanation is the labels: the same cell states may have
+been discretised differently in the two cohorts, which no reweighting of inputs can correct.
+That remains a hypothesis. The density ratio is estimated in a latent space trained to mix
+batches, which hides input shift by design, and the classifier's folds follow the patient order
+of the data, so it is scored on patients it has not seen; cells from the same patients in both
+folds would separate the cohorts more easily.
 
 ![weighted](results/figures/fig12_weighted_conformal.png)
 
@@ -161,7 +165,7 @@ problem from guaranteeing coverage.
 
 Two cells in one droplet give a hybrid profile that no single label fits. The query annotations were filtered by their authors, so this asks about the doublets that survived. `scripts/17_doublets.py` scores every sample with Scrublet ([Wolock et al., 2019](https://doi.org/10.1016/j.cels.2018.11.005), scanpy implementation, automatic threshold; the 75-cell KUL31-T sample is too small to score) and relates the call to each method's coarse error and novelty score.
 
-| Method | Coarse error, predicted doublets vs singlets | AUROC of the novelty score for doublets (95% CI) | Doublets among the 10% most novel cells |
+| Method | Coarse error, predicted doublets vs singlets | AUROC of the novelty score for doublets (95% CI) | Share of doublets in the 10% most novel cells |
 |---|---|---|---|
 | scANVI, latent distance | 16% vs 0.2% | **0.86** (0.81 to 0.91) | **63%** |
 | scVI + kNN | 24% vs 0.3% | 0.80 (0.74 to 0.86) | 55% |
@@ -169,7 +173,7 @@ Two cells in one droplet give a hybrid profile that no single label fits. The qu
 | scANVI, 1 − confidence | 16% vs 0.2% | 0.72 (0.66 to 0.77) | 20% |
 | Logistic regression, 1 − confidence | 20% vs 0.4% | 0.65 (0.57 to 0.72) | 22% |
 
-Only 60 of 27,339 scored cells (0.2%) are called doublets, so the authors' filtering removed most of them, but the ones left are mislabelled 50 to 80 times more often than singlets. Distance in the latent space flags them far better than the classifier's own confidence: abstaining on the 10% most distant cells removes 63% of the residual doublets, against 20% for the softmax score. A doublet sits between two cell-type clusters, which is far from every reference cell, while a classifier forced to choose between two plausible labels can still be confident about one of them. This supports using a distance-based novelty score for abstention. With 60 doublets the intervals are wide, and "error" means disagreeing with the authors' single label for a two-cell profile.
+Only 60 of 27,339 scored cells (0.2%) are called doublets, so the authors' filtering removed most of them, but the ones left are mislabelled 56 to 88 times more often than singlets. Distance in the latent space flags them far better than the classifier's own confidence: abstaining on the 10% most distant cells removes 63% of the residual doublets, against 20% for the softmax score. A doublet sits between two cell-type clusters, which is far from every reference cell, while a classifier forced to choose between two plausible labels can still be confident about one of them. This supports using a distance-based novelty score for abstention. With 60 doublets the intervals are wide, and "error" means disagreeing with the authors' single label for a two-cell profile.
 
 ### Does a multi-hospital reference help? A controlled test on Pelka et al.
 
@@ -255,7 +259,7 @@ src/scmap/
   conformal.py               split conformal prediction sets
   calibration.py             temperature scaling, reliability curves
   cli.py                     `scmap annotate`
-scripts/01…16_*.py           pipeline steps (Makefile)
+scripts/01…17_*.py           pipeline steps (Makefile)
 tests/                       pytest suite, run in CI
 results/tables, figures      all numbers and figures in this README
 ```
