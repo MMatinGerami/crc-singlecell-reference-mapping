@@ -21,13 +21,19 @@ Built in September 2026, at the start of my M1.
 
 <p align="center"><img src="results/figures/fig1_umap_scanvi.png" width="85%"></p>
 
+*Figure 1 | The two cohorts mix after scANVI mapping while cell types stay separate.* UMAP of the scANVI latent space for a random 40,000 of the 88,922 reference and query cells. **a**, Coloured by cohort. **b**, Each major cell type labelled at its median position.
+
 ### Label transfer
 
 ![accuracy](results/figures/fig2_accuracy.png)
 
+*Figure 2 | Label-transfer accuracy on the query cohort.* Macro-F1 on KUL3 for the six major cell types (**a**) and the 33 shared fine subtypes (**b**); error bars, 95% patient-bootstrap intervals (clipped at the point estimate where the interval lies below it).
+
 Confidence intervals come from resampling the 6 query patients (2,000 resamples), because cells from one patient are not independent. With so few patients, the percentile interval sits at or below the point estimate.
 
 ![per-subtype](results/figures/fig3_per_subtype_f1.png)
+
+*Figure 3 | Per-subtype F1 on the query cohort.* F1 on KUL3 for each of the 33 shared fine subtypes (major type in brackets) and each method.
 
 Subtypes succeed or fail together across all four methods, so the limit is mostly in the labels rather than the classifier. Proliferation, macrophage polarisation and CMS subtypes are continuous and were split differently in each cohort. CMS4 has only 11 reference cells.
 
@@ -37,6 +43,8 @@ Subtypes succeed or fail together across all four methods, so the limit is mostl
 <img src="results/figures/fig6_selective_prediction.png" width="46%">
 <img src="results/figures/fig5_natural_novelty.png" width="46%">
 </p>
+
+*Figure 4 | Abstention and novelty.* Left, accuracy on the covered cells of the shared subtypes when the least confident cells are abstained on, against coverage. Right, cumulative distribution of the distance to the nearest reference cells in scANVI space for the shared subtypes and the three populations missing from the reference annotation.
 
 Left: coverage vs accuracy. scANVI confidence and the PCA + kNN baseline give the best abstention signal (0.94 accuracy at 50% coverage, 0.89 at 80%; the two differ by less than 0.01). Right: populations missing from the reference annotation lie further from the reference in scANVI latent space (tuft cells most clearly), but they overlap with the tail of shared types.
 
@@ -53,6 +61,8 @@ Coverage transfers almost exactly, but accuracy is about 4 points below target: 
 ### Open-set experiment
 
 ![open-set](results/figures/fig4_open_set_auroc.png)
+
+*Figure 5 | Recognising a cell type the reference never contained.* AUROC for ranking the query cells of each deleted type above the seen ones, by novelty score: classifier confidence (logistic regression, scANVI) or latent distance (scVI + kNN, scANVI latent distance); dashed line, chance.
 
 Six cell types were deleted from the reference one at a time. AUROC for ranking the deleted type's query cells above the seen ones:
 
@@ -79,6 +89,8 @@ To test false alarms under a shift with no novel populations, a 40,000-cell rand
 
 <p align="center"><img src="results/figures/fig7_pelka.png" width="60%"></p>
 
+*Figure 6 | The distance flag under a second shift.* Cumulative distribution of the scANVI latent distance to the nearest reference cells for KUL3 shared subtypes, KUL3 novel populations and the Pelka subsample, in which every type exists in the reference; dashed line, the flag threshold (95th percentile of KUL3 shared-subtype distances).
+
 ### Variation across patients and tissues
 
 Pooled metrics hide how much performance depends on the patient. On the shared fine
@@ -87,6 +99,8 @@ patients, and every method does worse on tumour cells (scANVI 0.76) than on norm
 (0.90), with the tumour border in between (`scripts/08_per_patient.py`).
 
 ![per-patient](results/figures/fig8_per_patient.png)
+
+*Figure 7 | Variation across patients and tissues.* Accuracy on the shared fine subtypes of KUL3 by query patient (**a**) and by tissue (**b**), with the number of cells under each group.
 
 ### Conformal sets under cohort shift
 
@@ -101,20 +115,24 @@ all types or concentrated in a few is not settled by this design
 
 ![conformal-shift](results/figures/fig9_conformal_shift.png)
 
+*Figure 8 | Conformal sets under cohort shift, nominal 90% coverage.* **a**, Coverage of the true subtype on the calibration cells (held-out SMC patients) and on the KUL3 query, with one global threshold or one threshold per subtype. **b**, Query coverage by patient. Dashed lines, the nominal 90%.
+
 ### Per-lineage novelty thresholds do not help
 
 An earlier version of this README suggested setting the novelty threshold per lineage. Tested
 (`scripts/10_per_lineage_novelty.py`), it makes things worse: standardising each cell's latent
 distance within its predicted major lineage lowers the AUROC for the three populations missing
 from the reference annotation from 0.674 to 0.373, and at a 5% false-alarm rate the
-per-lineage thresholds catch 2.5% of novel cells against 2.7% for the global one. The left
-panel shows why: the novel cells (orange) sit inside the distance distribution of the
+per-lineage thresholds catch 2.5% of novel cells against 2.7% for the global one. Figure 9a
+shows why: the novel cells (points) sit inside the distance distribution of the
 epithelial and myeloid lineages they are assigned to. The modest global AUROC therefore came
 from those lineages being further from the reference in general, not from the novel cells
 being unusual within them. Detecting an unannotated subtype needs a different signal than
 distance to the nearest reference cells.
 
 ![per-lineage](results/figures/fig10_per_lineage_novelty.png)
+
+*Figure 9 | Per-lineage novelty thresholds.* **a**, scANVI latent distance of shared-subtype query cells by predicted lineage (boxes: median and quartiles; whiskers, 1.5 IQR; outliers not shown), with the novel cells overlaid as points; dashed line, the global threshold at 5% false alarms. **b**, Fraction of novel and shared cells flagged with the global and the per-lineage thresholds, with the AUROC of each score.
 
 ### How many reference patients are needed
 
@@ -129,6 +147,8 @@ same picture: 0.39 with three patients, 0.73 with six, 0.74 with all 23, with pa
 intervals of about 0.05.
 
 <p align="center"><img src="results/figures/fig14_reference_size_scanvi.png" width="60%"></p>
+
+*Figure 10 | Transfer against reference size.* Fine-subtype macro-F1 on KUL3 against the number of reference patients: logistic regression, mean of three random draws (shading, range); scANVI, one draw (error bars, 95% patient-bootstrap intervals).
 
 ### Shift-aware calibration does not recover the loss
 
@@ -147,6 +167,8 @@ folds would separate the cohorts more easily.
 
 ![weighted](results/figures/fig12_weighted_conformal.png)
 
+*Figure 11 | Weighted conformal prediction.* **a**, Query coverage of unweighted and density-ratio-weighted conformal sets at nominal 90% and 95% (dashed lines). **b**, Coverage by query patient at nominal 90%. **c**, Distribution of the calibration-cell weights (clipped at 0.05 and 20).
+
 ### Is the confidence calibrated, and does calibration survive the shift?
 
 scANVI's confidence is over-confident even on held-out patients of its own cohort: mean
@@ -160,6 +182,8 @@ the abstention thresholds above did not: calibrating the probabilities is a diff
 problem from guaranteeing coverage.
 
 ![calibration](results/figures/fig16_calibration_shift.png)
+
+*Figure 12 | Calibration of scANVI confidence.* **a**, **b**, Reliability curves on the held-out reference patients and on KUL3, raw and after temperature scaling fitted on the reference patients (bins with at least 20 cells; dashed line, perfect calibration; ECE, expected calibration error). **c**, ECE by KUL3 patient, raw and scaled.
 
 ### Do residual doublets fool the annotation, and does the novelty score catch them?
 
@@ -193,6 +217,8 @@ target rises from 0.90 and 0.87 to 0.94 on both, so for the deep model a mixed r
 also repairs the calibration.
 
 ![site-shift](results/figures/fig13_site_shift_pelka.png)
+
+*Figure 13 | Single-site and mixed-site references on the Pelka atlas.* Logistic-regression macro-F1 (**a**) and conformal coverage at nominal 90% (**b**, dashed line) on the held-out hospital, with a 12-patient reference drawn from the other hospital only or from both; bars, mean ± SD over three draws.
 
 ### Integration quality (scib-metrics)
 
@@ -232,6 +258,7 @@ Requires [uv](https://docs.astral.sh/uv/) and ~2 GB of disk. Data: GEO [GSE13246
 uv sync
 make data          # download both cohorts from GEO (~190 MB)
 make all           # prepare, transfer, open-set, integration, figures, calibration, pelka, patients, conformal, lineage, refsize, weighted, siteshift, refsize-scanvi, siteshift-scanvi, calibration-shift, doublets
+make figures       # redraw every figure from the saved tables, no refitting
 make test          # unit tests
 scmap annotate my_query.h5ad --target 0.95 -o labels.csv   # label a new dataset with the saved reference
 ```
@@ -258,6 +285,7 @@ src/scmap/
   evaluate.py                patient bootstrap, per-class F1, novelty AUROC
   conformal.py               split conformal prediction sets
   calibration.py             temperature scaling, reliability curves
+  plotting.py                figure style (Nature specifications: Arial 5 to 7 pt, 89/183 mm widths, Wong palette)
   cli.py                     `scmap annotate`
 scripts/01…17_*.py           pipeline steps (Makefile)
 tests/                       pytest suite, run in CI

@@ -14,6 +14,8 @@ figures/fig16_calibration_shift.png.
 
 from __future__ import annotations
 
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -25,7 +27,7 @@ from scmap.calibration import (
     reliability_curve,
 )
 from scmap.config import load_config
-from scmap.plotting import INK_2, INK_3, SERIES, apply_style
+from scmap.plotting import DOUBLE, INK_3, MM, SERIES, apply_style, panel_label, save
 
 
 def main() -> None:
@@ -92,45 +94,78 @@ def main() -> None:
     pp = pd.DataFrame(per_patient)
     pp.to_csv(tables / "calibration_shift_per_patient.csv", index=False)
     print(pp.round(3).to_string(index=False))
+    # the reliability curves are saved so the figure can be redrawn without refitting
+    curves_table(curves).to_csv(tables / "calibration_shift_curves.csv", index=False)
     plot(curves, out, pp, figures)
+
+
+def curves_table(curves) -> pd.DataFrame:
+    return pd.concat(
+        pd.DataFrame(
+            {"split": split, "stage": stage, "bin": np.arange(len(n)), "accuracy": acc}
+            | {"confidence": conf, "n_cells": n}
+        )
+        for (split, stage), (acc, conf, n) in curves.items()
+    )
+
+
+def curves_from_table(table: pd.DataFrame):
+    return {
+        (split, stage): (
+            d["accuracy"].to_numpy(),
+            d["confidence"].to_numpy(),
+            d["n_cells"].to_numpy(),
+        )
+        for (split, stage), d in table.groupby(["split", "stage"], sort=False)
+    }
 
 
 def plot(curves, out: pd.DataFrame, pp: pd.DataFrame, figures) -> None:
     apply_style()
-    fig, axes = plt.subplots(1, 3, figsize=(12.5, 3.8))
-    for ax, split in zip(axes[:2], out["split"].unique(), strict=True):
-        ax.plot([0, 1], [0, 1], color=INK_3, lw=1, ls="--")
-        for stage, style, alpha in (("raw", "o-", 1.0), ("temperature scaled", "s--", 0.55)):
+    fig, axes = plt.subplots(
+        1, 3, figsize=(DOUBLE, 58 * MM), gridspec_kw={"width_ratios": [1, 1, 1.3]}
+    )
+    stages = (("raw", "Raw", "o-", SERIES[0]), ("temperature scaled", "Scaled", "s--", SERIES[1]))
+    for ax, letter, split in zip(axes[:2], "ab", out["split"].unique(), strict=True):
+        ax.plot([0, 1], [0, 1], color=INK_3, lw=0.6, ls="--")
+        for stage, label, style, colour in stages:
             acc, conf, n = curves[(split, stage)]
             m = n >= 20
             e = out[(out.split == split) & (out.stage == stage)]["ece"].item()
-            ax.plot(
-                conf[m], acc[m], style, color=SERIES[3], alpha=alpha, label=f"{stage} (ECE {e:.3f})"
-            )
+            ax.plot(conf[m], acc[m], style, color=colour, ms=2.5, label=f"{label} (ECE {e:.3f})")
         ax.set(
-            xlim=(0, 1),
-            ylim=(0, 1),
+            xlim=(0, 1.02),
+            ylim=(0, 1.02),
             xlabel="scANVI confidence",
             ylabel="Accuracy",
-            title=split.capitalize(),
+            aspect="equal",
         )
-        ax.legend(loc="upper left", fontsize=7)
+        ax.set_title("Reference, calibration patients" if split != "query" else "Query (KUL3)")
+        ax.legend(loc="lower right")
+        panel_label(ax, letter, x=-0.3, y=1.08)
     ax = axes[2]
     raw = pp[pp.stage == "raw"].set_index("patient")
     scaled = pp[pp.stage == "temperature scaled"].set_index("patient").loc[raw.index]
     x = np.arange(len(raw))
-    ax.bar(x - 0.2, raw["ece"], width=0.4, color=SERIES[3], label="raw")
-    ax.bar(
-        x + 0.2, scaled["ece"], width=0.4, color=SERIES[3], alpha=0.5, label="temperature scaled"
-    )
-    ax.set_xticks(x)
-    ax.set_xticklabels(raw.index, fontsize=8)
-    ax.set(ylabel="Expected calibration error", title="Query patients")
-    ax.set_xlabel("KUL3 patient", color=INK_2)
-    ax.legend(loc="upper right", fontsize=7)
-    fig.savefig(figures / "fig16_calibration_shift.png")
-    plt.close(fig)
+    ax.bar(x - 0.2, raw["ece"], width=0.4, color=SERIES[0], label="Raw", lw=0)
+    ax.bar(x + 0.2, scaled["ece"], width=0.4, color=SERIES[1], label="Temperature scaled", lw=0)
+    ax.set_xticks(x, raw.index)
+    ax.tick_params(axis="x", length=0)
+    ax.set(ylabel="Expected calibration error", xlabel="KUL3 patient", xlim=(-0.6, len(x) - 0.4))
+    ax.legend(loc="lower left", bbox_to_anchor=(0.0, 1.0), ncol=2)
+    panel_label(ax, "c", x=-0.25, y=1.08)
+    fig.tight_layout(w_pad=1.5)
+    save(fig, figures / "fig16_calibration_shift")
 
 
 if __name__ == "__main__":
-    main()
+    if "--plot-only" in sys.argv:  # redraw from the saved tables, no refitting
+        tab = load_config().path("results") / "tables"
+        plot(
+            curves_from_table(pd.read_csv(tab / "calibration_shift_curves.csv")),
+            pd.read_csv(tab / "calibration_shift.csv"),
+            pd.read_csv(tab / "calibration_shift_per_patient.csv"),
+            load_config().path("results") / "figures",
+        )
+    else:
+        main()

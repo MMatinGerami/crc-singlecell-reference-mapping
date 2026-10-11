@@ -1,0 +1,41 @@
+split,stage,bin,accuracy,confidence,n_cells
+reference (calibration patients),raw,0,,,0
+reference (calibration patients),raw,1,,,0
+reference (calibration patients),raw,2,0.0,0.25422345604406604,1
+reference (calibration patients),raw,3,0.5,0.3691924357155951,8
+reference (calibration patients),raw,4,0.4406779661016949,0.4678919811540203,59
+reference (calibration patients),raw,5,0.44150943396226416,0.5482546660218531,265
+reference (calibration patients),raw,6,0.4721030042918455,0.6502298930525443,233
+reference (calibration patients),raw,7,0.5331325301204819,0.7508304398317593,332
+reference (calibration patients),raw,8,0.5481927710843374,0.8541497124812045,498
+reference (calibration patients),raw,9,0.9214914552045572,0.9931905507342035,9655
+reference (calibration patients),temperature scaled,0,,,0
+reference (calibration patients),temperature scaled,1,0.0,0.1750150648300662,2
+reference (calibration patients),temperature scaled,2,0.5,0.2654936686371232,8
+reference (calibration patients),temperature scaled,3,0.4942528735632184,0.36535273191226514,87
+reference (calibration patients),temperature scaled,4,0.3993174061433447,0.4589704512300735,293
+reference (calibration patients),temperature scaled,5,0.5029585798816568,0.5499656076104272,507
+reference (calibration patients),temperature scaled,6,0.5970695970695971,0.6506439491736892,546
+reference (calibration patients),temperature scaled,7,0.6671597633136095,0.752457435881818,676
+reference (calibration patients),temperature scaled,8,0.7945804195804196,0.8550846084934243,1144
+reference (calibration patients),temperature scaled,9,0.9628916281458655,0.9698689468545281,7788
+query,raw,0,,,0
+query,raw,1,,,0
+query,raw,2,0.5,0.28369214042159113,2
+query,raw,3,0.21875,0.3702404288580432,32
+query,raw,4,0.3722627737226277,0.46823074762647654,137
+query,raw,5,0.4647058823529412,0.5506118505226875,510
+query,raw,6,0.4640151515151515,0.649581912611448,528
+query,raw,7,0.5285935085007728,0.7515370515737799,647
+query,raw,8,0.56442417331813,0.8539529750447836,877
+query,raw,9,0.8789358066878203,0.9938109274646312,20485
+query,temperature scaled,0,,,0
+query,temperature scaled,1,0.3333333333333333,0.1838352910477116,3
+query,temperature scaled,2,0.2765957446808511,0.264507199519984,47
+query,temperature scaled,3,0.34782608695652173,0.3635823612682788,184
+query,temperature scaled,4,0.47128378378378377,0.4570311092846545,592
+query,temperature scaled,5,0.5128968253968254,0.5501927874499019,1008
+query,temperature scaled,6,0.5725490196078431,0.6515999503964557,1020
+query,temperature scaled,7,0.6486902927580893,0.7511587394199735,1298
+query,temperature scaled,8,0.7410358565737052,0.8569658086381732,2259
+query,temperature scaled,9,0.9168203724638544,0.9726007748679525,16807

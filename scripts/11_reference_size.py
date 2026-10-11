@@ -10,6 +10,8 @@ Writes results/tables/reference_size.csv and figures/fig11_reference_size.png.
 
 from __future__ import annotations
 
+import sys
+
 import anndata as ad
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,7 +20,7 @@ import pandas as pd
 from scmap.baselines import logreg
 from scmap.config import load_config
 from scmap.evaluate import classification_scores
-from scmap.plotting import SERIES, apply_style
+from scmap.plotting import MM, SERIES, SINGLE, apply_style, save
 from scmap.preprocess import lognorm, select_hvgs
 
 SIZES = (3, 6, 10, 15, 23)
@@ -80,7 +82,7 @@ def main() -> None:
 
 def plot(out: pd.DataFrame, figures) -> None:
     apply_style()
-    fig, ax = plt.subplots(figsize=(5.2, 3.4))
+    fig, ax = plt.subplots(figsize=(SINGLE, 58 * MM))
     for col, colour, label in (
         ("fine_macro_f1", SERIES[0], "Fine subtypes, macro-F1"),
         ("fine_accuracy", SERIES[1], "Fine subtypes, accuracy"),
@@ -88,17 +90,16 @@ def plot(out: pd.DataFrame, figures) -> None:
     ):
         g = out.groupby("n_patients")[col].agg(["mean", "min", "max"]).reset_index()
         ax.plot(g["n_patients"], g["mean"], "o-", color=colour, label=label)
-        ax.fill_between(g["n_patients"], g["min"], g["max"], color=colour, alpha=0.15, lw=0)
+        ax.fill_between(g["n_patients"], g["min"], g["max"], color=colour, alpha=0.2, lw=0)
     ax.set_xticks(list(SIZES))
-    ax.set(
-        xlabel="Reference patients",
-        ylabel="Score on the query (KUL3)",
-        title="Transfer vs reference size (logistic regression)",
-    )
-    ax.legend(loc="lower right", fontsize=8)
-    fig.savefig(figures / "fig11_reference_size.png")
-    plt.close(fig)
+    ax.set(xlabel="Reference patients", ylabel="Score on the query (KUL3)")
+    ax.legend(loc="lower right")
+    save(fig, figures / "fig11_reference_size")
 
 
 if __name__ == "__main__":
-    main()
+    if "--plot-only" in sys.argv:  # redraw from the saved table, no refitting
+        res = load_config().path("results")
+        plot(pd.read_csv(res / "tables" / "reference_size.csv"), res / "figures")
+    else:
+        main()

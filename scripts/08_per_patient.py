@@ -10,6 +10,8 @@ Writes results/tables/per_patient.csv, per_tissue.csv and figures/fig8_per_patie
 
 from __future__ import annotations
 
+import sys
+
 import anndata as ad
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +19,7 @@ import pandas as pd
 
 from scmap.config import load_config
 from scmap.evaluate import classification_scores
-from scmap.plotting import INK_2, METHOD_LABELS, SERIES, apply_style
+from scmap.plotting import DOUBLE, METHOD_LABELS, MM, SERIES, apply_style, panel_label, save
 
 CLASSIFIERS = ["logreg", "knn_pca", "scvi_knn", "scanvi"]
 
@@ -64,10 +66,12 @@ def main() -> None:
 
 def plot(per_patient: pd.DataFrame, per_tissue: pd.DataFrame, figures) -> None:
     apply_style()
-    fig, axes = plt.subplots(1, 2, figsize=(10, 3.4), gridspec_kw={"width_ratios": [3, 2]})
-    for ax, df, factor, title in (
-        (axes[0], per_patient, "patient", "Fine-subtype accuracy by query patient"),
-        (axes[1], per_tissue, "tissue", "By tissue type"),
+    fig, axes = plt.subplots(
+        1, 2, figsize=(DOUBLE * 0.85, 55 * MM), gridspec_kw={"width_ratios": [3, 1.6]}
+    )
+    for ax, letter, df, factor in (
+        (axes[0], "a", per_patient, "patient"),
+        (axes[1], "b", per_tissue, "tissue"),
     ):
         levels = sorted(df[factor].unique(), key=lambda v: str(v))
         x = np.arange(len(levels))
@@ -80,18 +84,27 @@ def plot(per_patient: pd.DataFrame, per_tissue: pd.DataFrame, figures) -> None:
                 width=width,
                 color=colour,
                 label=METHOD_LABELS[method],
+                lw=0,
             )
         n = df[df["method"] == CLASSIFIERS[0]].set_index(factor).loc[levels]["n_cells"]
-        ax.set_xticks(x)
-        ax.set_xticklabels(
-            [f"{lv}\n{c:,} cells" for lv, c in zip(levels, n, strict=True)], fontsize=7
-        )
-        ax.set(ylim=(0.5, 1.0), title=title)
-    axes[0].set_ylabel("Accuracy on shared fine subtypes", color=INK_2)
-    axes[0].legend(loc="lower left", fontsize=7, ncol=2)
-    fig.savefig(figures / "fig8_per_patient.png")
-    plt.close(fig)
+        ax.set_xticks(x, [f"{lv}\n{c:,} cells" for lv, c in zip(levels, n, strict=True)])
+        ax.tick_params(axis="x", length=0)
+        ax.set(ylim=(0.5, 1.0), xlim=(-0.6, len(levels) - 0.4))
+        ax.set_xlabel("Query patient" if factor == "patient" else "Tissue")
+        panel_label(ax, letter, x=-0.16 if factor == "patient" else -0.22, y=1.1)
+    axes[0].set_ylabel("Accuracy, shared fine subtypes")
+    axes[0].legend(loc="lower left", bbox_to_anchor=(0.0, 1.0), ncol=4)
+    fig.tight_layout(w_pad=2)
+    save(fig, figures / "fig8_per_patient")
 
 
 if __name__ == "__main__":
-    main()
+    if "--plot-only" in sys.argv:  # redraw from the saved tables
+        tab = load_config().path("results") / "tables"
+        plot(
+            pd.read_csv(tab / "per_patient.csv"),
+            pd.read_csv(tab / "per_tissue.csv"),
+            load_config().path("results") / "figures",
+        )
+    else:
+        main()

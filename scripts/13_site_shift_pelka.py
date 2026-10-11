@@ -18,6 +18,7 @@ Writes results/tables/site_shift_pelka.csv and figures/fig13_site_shift_pelka.pn
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -28,7 +29,7 @@ from scmap.baselines import logreg
 from scmap.config import load_config
 from scmap.conformal import coverage, prediction_sets, quantile, scores_of_true_class
 from scmap.evaluate import classification_scores
-from scmap.plotting import INK_3, SERIES, apply_style
+from scmap.plotting import DOUBLE, INK, INK_3, MM, SERIES, apply_style, panel_label, save
 from scmap.preprocess import lognorm, select_hvgs
 
 N_REFERENCE_PATIENTS = 12
@@ -135,10 +136,10 @@ def main() -> None:
 
 def plot(out: pd.DataFrame, figures) -> None:
     apply_style()
-    fig, axes = plt.subplots(1, 2, figsize=(9, 3.4))
-    for ax, col, title in (
-        (axes[0], "macro_f1", "Macro-F1 on the held-out hospital"),
-        (axes[1], "coverage_90", "Conformal coverage, nominal 90%"),
+    fig, axes = plt.subplots(1, 2, figsize=(DOUBLE * 0.7, 55 * MM))
+    for ax, letter, col, label in (
+        (axes[0], "a", "macro_f1", "Macro-F1 on the held-out hospital"),
+        (axes[1], "b", "coverage_90", "Coverage on the held-out hospital"),
     ):
         hospitals = sorted(out["test_hospital"].unique())
         x = np.arange(len(hospitals))
@@ -151,22 +152,28 @@ def plot(out: pd.DataFrame, figures) -> None:
                 d.mean().loc[hospitals],
                 yerr=d.std().loc[hospitals],
                 width=0.36,
-                capsize=3,
                 color=colour,
-                label=f"{design} reference",
+                label=f"{design.capitalize()} reference",
+                lw=0,
+                error_kw={"elinewidth": 0.8, "ecolor": INK},
             )
-        ax.set_xticks(x)
-        ax.set_xticklabels([f"tested on {h}" for h in hospitals])
-        ax.set(title=title)
+        ax.set_xticks(x, [f"Tested on {h}" for h in hospitals])
+        ax.tick_params(axis="x", length=0)
+        ax.set(ylabel=label, xlim=(-0.6, len(hospitals) - 0.4))
         if col == "coverage_90":
-            ax.axhline(0.9, color=INK_3, ls="--", lw=1)
+            ax.axhline(0.9, color=INK_3, ls="--", lw=0.6)
             ax.set_ylim(0.7, 1.0)
         else:
             ax.set_ylim(0.5, 1.0)
-    axes[0].legend(loc="lower right", fontsize=8)
-    fig.savefig(figures / "fig13_site_shift_pelka.png")
-    plt.close(fig)
+        panel_label(ax, letter, x=-0.3, y=1.1)
+    axes[0].legend(loc="lower left", bbox_to_anchor=(0.0, 1.0), ncol=2)
+    fig.tight_layout(w_pad=2.5)
+    save(fig, figures / "fig13_site_shift_pelka")
 
 
 if __name__ == "__main__":
-    main()
+    if "--plot-only" in sys.argv:  # redraw from the saved table, no refitting
+        res = load_config().path("results")
+        plot(pd.read_csv(res / "tables" / "site_shift_pelka.csv"), res / "figures")
+    else:
+        main()

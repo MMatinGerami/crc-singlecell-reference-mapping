@@ -17,6 +17,8 @@ figures/fig12_weighted_conformal.png.
 
 from __future__ import annotations
 
+import sys
+
 import anndata as ad
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,7 +29,7 @@ from sklearn.model_selection import cross_val_predict
 from scmap.config import load_config
 from scmap.conformal import coverage, prediction_sets, quantile, scores_of_true_class
 from scmap.models import map_query, scanvi_soft
-from scmap.plotting import INK_3, SERIES, apply_style
+from scmap.plotting import DOUBLE, INK_3, MM, SERIES, apply_style, panel_label, save
 from scmap.preprocess import select_hvgs
 
 ALPHAS = (0.10, 0.05)
@@ -177,43 +179,69 @@ def main() -> None:
     pp.to_csv(tables / "weighted_conformal_per_patient.csv", index=False)
     print(out.round(3).to_string(index=False))
     print(pp.round(3).to_string(index=False))
+    # the weights are saved so the figure can be redrawn without refitting the classifier
+    pd.DataFrame({"weight": w_cal}).to_csv(tables / "weighted_conformal_weights.csv", index=False)
     plot(out, pp, w_cal, figures)
 
 
 def plot(out: pd.DataFrame, pp: pd.DataFrame, w_cal: np.ndarray, figures) -> None:
     apply_style()
-    fig, axes = plt.subplots(1, 3, figsize=(12, 3.4), gridspec_kw={"width_ratios": [2, 3, 2]})
+    fig, axes = plt.subplots(
+        1, 3, figsize=(DOUBLE, 55 * MM), gridspec_kw={"width_ratios": [1.6, 2.6, 1.6]}
+    )
+    methods = (("unweighted", "Unweighted"), ("weighted", "Weighted"))
     ax = axes[0]
-    for i, (method, colour) in enumerate(zip(("unweighted", "weighted"), SERIES[:2], strict=True)):
+    for i, ((method, label), colour) in enumerate(zip(methods, SERIES[:2], strict=True)):
         d = out[out["method"] == method].sort_values("alpha", ascending=False)
         ax.bar(
-            np.arange(2) + (i - 0.5) * 0.36, d["coverage"], width=0.36, color=colour, label=method
+            np.arange(2) + (i - 0.5) * 0.36,
+            d["coverage"],
+            width=0.36,
+            color=colour,
+            label=label,
+            lw=0,
         )
     for x, a in enumerate(sorted(ALPHAS, reverse=True)):
-        ax.hlines(1 - a, x - 0.4, x + 0.4, color=INK_3, ls="--", lw=1)
-    ax.set_xticks(range(2))
-    ax.set_xticklabels([f"nominal {1 - a:.0%}" for a in sorted(ALPHAS, reverse=True)])
-    ax.set(ylim=(0.7, 1.0), ylabel="Coverage on the query (KUL3)", title="Coverage under shift")
-    ax.legend(loc="lower right", fontsize=8)
+        ax.hlines(1 - a, x - 0.4, x + 0.4, color=INK_3, ls="--", lw=0.6)
+    ax.set_xticks(range(2), [f"Nominal {1 - a:.0%}" for a in sorted(ALPHAS, reverse=True)])
+    ax.tick_params(axis="x", length=0)
+    ax.set(ylim=(0.7, 1.0), xlim=(-0.6, 1.6), ylabel="Coverage on the query (KUL3)")
+    ax.legend(loc="lower left", bbox_to_anchor=(0.0, 1.0), ncol=2)
+    panel_label(ax, "a", x=-0.42, y=1.1)
 
     ax = axes[1]
     d = pp[pp["alpha"] == 0.10]
     patients = sorted(d["patient"].unique())
     x = np.arange(len(patients))
-    for i, (method, colour) in enumerate(zip(("unweighted", "weighted"), SERIES[:2], strict=True)):
+    for i, ((method, _), colour) in enumerate(zip(methods, SERIES[:2], strict=True)):
         v = d[d["method"] == method].set_index("patient").loc[patients]
-        ax.bar(x + (i - 0.5) * 0.36, v["coverage"], width=0.36, color=colour)
-    ax.axhline(0.9, color=INK_3, ls="--", lw=1)
-    ax.set_xticks(x)
-    ax.set_xticklabels(patients, fontsize=8)
-    ax.set(ylim=(0.7, 1.0), title="By query patient, nominal 90%")
+        ax.bar(x + (i - 0.5) * 0.36, v["coverage"], width=0.36, color=colour, lw=0)
+    ax.axhline(0.9, color=INK_3, ls="--", lw=0.6)
+    ax.set_xticks(x, patients)
+    ax.tick_params(axis="x", length=0)
+    ax.set(
+        ylim=(0.7, 1.0),
+        xlim=(-0.6, len(patients) - 0.4),
+        xlabel="Query patient (nominal 90%)",
+    )
+    panel_label(ax, "b", x=-0.12, y=1.1)
 
     ax = axes[2]
-    ax.hist(np.log10(w_cal), bins=40, color=SERIES[0])
-    ax.set(xlabel="log10 weight of calibration cell", ylabel="cells", title="Density-ratio weights")
-    fig.savefig(figures / "fig12_weighted_conformal.png")
-    plt.close(fig)
+    ax.hist(np.log10(w_cal), bins=40, color=SERIES[0], lw=0)
+    ax.set(xlabel="log$_{10}$ weight of calibration cell", ylabel="Cells")
+    panel_label(ax, "c", x=-0.42, y=1.1)
+    fig.tight_layout(w_pad=1.5)
+    save(fig, figures / "fig12_weighted_conformal")
 
 
 if __name__ == "__main__":
-    main()
+    if "--plot-only" in sys.argv:  # redraw from the saved tables, no refitting
+        tab = load_config().path("results") / "tables"
+        plot(
+            pd.read_csv(tab / "weighted_conformal.csv"),
+            pd.read_csv(tab / "weighted_conformal_per_patient.csv"),
+            pd.read_csv(tab / "weighted_conformal_weights.csv")["weight"].to_numpy(),
+            load_config().path("results") / "figures",
+        )
+    else:
+        main()

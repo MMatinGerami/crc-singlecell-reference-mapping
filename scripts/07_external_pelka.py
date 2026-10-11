@@ -15,6 +15,8 @@ figures/fig7_pelka.png. Uses the frozen models from scripts/02 (run that first).
 
 from __future__ import annotations
 
+import sys
+
 import anndata as ad
 import h5py
 import matplotlib.pyplot as plt
@@ -27,7 +29,7 @@ from scmap.config import load_config
 from scmap.evaluate import patient_bootstrap
 from scmap.models import map_query, scanvi_soft
 from scmap.pipeline import coarse_of
-from scmap.plotting import INK_3, SERIES, apply_style
+from scmap.plotting import INK_2, INK_3, MM, SERIES, SINGLE, apply_style, save
 
 TOPLEVEL_TO_REFERENCE = {
     "Epi": "Epithelial cells",
@@ -138,35 +140,55 @@ def main() -> None:
     pd.DataFrame([rows]).to_csv(tables / "pelka_novelty_false_alarm.csv", index=False)
     print(rows, flush=True)
 
+    plot(kul, dist_pelka, figures=fig_dir)
+
+
+def plot(kul: pd.DataFrame, dist_pelka: np.ndarray, figures) -> None:
     apply_style()
-    fig, ax = plt.subplots(figsize=(5.6, 3.6))
+    shared = kul.loc[kul.label_role == "shared", "novelty"].to_numpy()
+    thr = np.quantile(shared, 0.95)
+    fig, ax = plt.subplots(figsize=(SINGLE, 60 * MM))
     groups = [
-        ("KUL3, shared subtypes", kul.loc[kul.label_role == "shared", "novelty"].to_numpy()),
+        ("KUL3, shared subtypes", shared),
         ("KUL3, novel populations", kul.loc[kul.label_role == "novel", "novelty"].to_numpy()),
-        ("Pelka atlas (all types known)", dist_pelka),
+        ("Pelka atlas, all types known", dist_pelka),
     ]
     for (name, v), colour in zip(groups, [SERIES[0], SERIES[3], SERIES[2]], strict=True):
         v = np.sort(v)
-        ax.plot(v, np.linspace(0, 1, len(v)), color=colour, label=f"{name} (n={len(v):,})")
-    ax.axvline(thr, color=INK_3, lw=1, ls="--")
+        ax.plot(v, np.linspace(0, 1, len(v)), color=colour, label=f"{name} (n = {len(v):,})")
+    ax.axvline(thr, color=INK_3, lw=0.6, ls="--")
     ax.annotate(
-        "flag threshold\n(95% of KUL3 shared)",
-        (thr, 0.99),
-        xytext=(-78, -6),
+        "Flag threshold\n(95% of KUL3 shared)",
+        (thr, 0.3),
+        xytext=(4, 0),
         textcoords="offset points",
-        fontsize=7,
-        color=INK_3,
+        fontsize=5,
+        color=INK_2,
+        va="center",
     )
     ax.set(
-        xlabel="Distance to nearest reference cells in scANVI space", ylabel="Cumulative fraction"
+        xlabel="Distance to nearest reference cells (scANVI)",
+        ylabel="Cumulative fraction",
+        ylim=(0, 1.01),
     )
-    ax.legend(fontsize=8, loc="lower right")
-    ax.set_title(
-        "The distance flag: nearly calm under a second shift, blind to vocabulary gaps", loc="left"
-    )
-    fig.savefig(fig_dir / "fig7_pelka.png")
-    plt.close(fig)
+    ax.legend(loc="lower left", bbox_to_anchor=(0.0, 1.0))
+    save(fig, figures / "fig7_pelka")
+
+
+def plot_inputs(cfg) -> tuple[pd.DataFrame, np.ndarray]:
+    """KUL3 latent distances and roles, and the saved Pelka distances: no remapping."""
+    tables = cfg.path("results") / "tables"
+    preds = pd.read_parquet(tables / "predictions.parquet")
+    kul = preds[preds.method == "scanvi_latent_distance"].set_index("cell")
+    qry_obs = ad.read_h5ad(cfg.path("processed") / "query.h5ad", backed="r").obs
+    kul = kul.join(qry_obs[["label_role"]].astype(str))
+    dist_pelka = pd.read_parquet(tables / "pelka_distances.parquet")["distance"].to_numpy()
+    return kul, dist_pelka
 
 
 if __name__ == "__main__":
-    main()
+    if "--plot-only" in sys.argv:  # redraw from the saved tables, no remapping
+        _cfg = load_config()
+        plot(*plot_inputs(_cfg), _cfg.path("results") / "figures")
+    else:
+        main()

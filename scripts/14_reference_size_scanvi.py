@@ -12,6 +12,7 @@ Writes results/tables/reference_size_scanvi.csv and figures/fig14_reference_size
 
 from __future__ import annotations
 
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -24,7 +25,7 @@ import pandas as pd
 from scmap.config import load_config
 from scmap.evaluate import classification_scores, patient_bootstrap
 from scmap.models import map_query, scanvi_soft, train_reference
-from scmap.plotting import SERIES, apply_style
+from scmap.plotting import MM, SERIES, SINGLE, apply_style, save
 from scmap.preprocess import select_hvgs
 
 SIZES = (3, 6, 10, 15, 23)
@@ -106,12 +107,12 @@ def main() -> None:
 
 def plot(scanvi: pd.DataFrame, logreg: pd.DataFrame, figures) -> None:
     apply_style()
-    fig, ax = plt.subplots(figsize=(5.4, 3.4))
+    fig, ax = plt.subplots(figsize=(SINGLE, 58 * MM))
     g = logreg.groupby("n_patients")["fine_macro_f1"].agg(["mean", "min", "max"]).reset_index()
     ax.plot(
         g["n_patients"], g["mean"], "o-", color=SERIES[0], label="Logistic regression (3 draws)"
     )
-    ax.fill_between(g["n_patients"], g["min"], g["max"], color=SERIES[0], alpha=0.15, lw=0)
+    ax.fill_between(g["n_patients"], g["min"], g["max"], color=SERIES[0], alpha=0.2, lw=0)
     ax.errorbar(
         scanvi["n_patients"],
         scanvi["fine_macro_f1"],
@@ -120,20 +121,24 @@ def plot(scanvi: pd.DataFrame, logreg: pd.DataFrame, figures) -> None:
             scanvi["fine_macro_f1_high"] - scanvi["fine_macro_f1"],
         ],
         fmt="s-",
-        color=SERIES[3],
-        capsize=3,
+        ms=3,
+        color=SERIES[1],
+        elinewidth=0.8,
         label="scANVI (1 draw, patient-bootstrap CI)",
     )
     ax.set_xticks(list(SIZES))
-    ax.set(
-        xlabel="Reference patients",
-        ylabel="Fine-subtype macro-F1 on the query",
-        title="Transfer vs reference size",
-    )
-    ax.legend(loc="lower right", fontsize=8)
-    fig.savefig(figures / "fig14_reference_size_scanvi.png")
-    plt.close(fig)
+    ax.set(xlabel="Reference patients", ylabel="Fine-subtype macro-F1 (KUL3)")
+    ax.legend(loc="lower right")
+    save(fig, figures / "fig14_reference_size_scanvi")
 
 
 if __name__ == "__main__":
-    main()
+    if "--plot-only" in sys.argv:  # redraw from the saved tables, no retraining
+        res = load_config().path("results")
+        plot(
+            pd.read_csv(res / "tables" / "reference_size_scanvi.csv"),
+            pd.read_csv(res / "tables" / "reference_size.csv"),
+            res / "figures",
+        )
+    else:
+        main()

@@ -15,6 +15,8 @@ figures/fig9_conformal_shift.png.
 
 from __future__ import annotations
 
+import sys
+
 import anndata as ad
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,7 +32,7 @@ from scmap.conformal import (
     summarize,
 )
 from scmap.models import map_query, scanvi_soft
-from scmap.plotting import INK_3, SERIES, apply_style
+from scmap.plotting import DOUBLE, INK_3, MM, SERIES, apply_style, panel_label, save
 from scmap.preprocess import select_hvgs
 
 ALPHAS = (0.10, 0.05)
@@ -114,45 +116,50 @@ def main() -> None:
     plot(out, pp, figures)
 
 
+VARIANTS = (("marginal", "One threshold"), ("class_conditional", "One threshold per subtype"))
+
+
 def plot(out: pd.DataFrame, pp: pd.DataFrame, figures) -> None:
     apply_style()
-    fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.4))
+    fig, axes = plt.subplots(
+        1, 2, figsize=(DOUBLE * 0.8, 55 * MM), gridspec_kw={"width_ratios": [1.2, 2]}
+    )
     ax = axes[0]
     d = out[out["alpha"] == 0.10]
     x = np.arange(2)
-    for i, (variant, colour) in enumerate(
-        zip(("marginal", "class_conditional"), SERIES[:2], strict=True)
-    ):
+    for i, ((variant, label), colour) in enumerate(zip(VARIANTS, SERIES[:2], strict=True)):
         v = d[d["variant"] == variant].set_index("split").loc[["calibration", "query"]]
-        ax.bar(
-            x + (i - 0.5) * 0.36,
-            v["coverage"],
-            width=0.36,
-            color=colour,
-            label=variant.replace("_", " "),
-        )
-    ax.axhline(0.9, color=INK_3, ls="--", lw=1)
-    ax.set_xticks(x)
-    ax.set_xticklabels(["Calibration (SMC, held-out patients)", "Query (KUL3)"])
-    ax.set(ylim=(0.6, 1.0), ylabel="Coverage of the true subtype", title="Nominal 90% coverage")
-    ax.legend(loc="lower left")
+        ax.bar(x + (i - 0.5) * 0.36, v["coverage"], width=0.36, color=colour, label=label, lw=0)
+    ax.axhline(0.9, color=INK_3, ls="--", lw=0.6)
+    ax.set_xticks(x, ["Calibration\n(SMC, held-out patients)", "Query\n(KUL3)"])
+    ax.tick_params(axis="x", length=0)
+    ax.set(ylim=(0.6, 1.0), xlim=(-0.6, 1.6), ylabel="Coverage of the true subtype")
+    ax.legend(loc="lower left", bbox_to_anchor=(0.0, 1.0), ncol=2)
+    panel_label(ax, "a", x=-0.38, y=1.1)
 
     ax = axes[1]
     d = pp[pp["alpha"] == 0.10]
     patients = sorted(d["patient"].unique())
     x = np.arange(len(patients))
-    for i, (variant, colour) in enumerate(
-        zip(("marginal", "class_conditional"), SERIES[:2], strict=True)
-    ):
+    for i, ((variant, _), colour) in enumerate(zip(VARIANTS, SERIES[:2], strict=True)):
         v = d[d["variant"] == variant].set_index("patient").loc[patients]
-        ax.bar(x + (i - 0.5) * 0.36, v["coverage"], width=0.36, color=colour)
-    ax.axhline(0.9, color=INK_3, ls="--", lw=1)
-    ax.set_xticks(x)
-    ax.set_xticklabels(patients, fontsize=8)
-    ax.set(ylim=(0.6, 1.0), title="Coverage by query patient")
-    fig.savefig(figures / "fig9_conformal_shift.png")
-    plt.close(fig)
+        ax.bar(x + (i - 0.5) * 0.36, v["coverage"], width=0.36, color=colour, lw=0)
+    ax.axhline(0.9, color=INK_3, ls="--", lw=0.6)
+    ax.set_xticks(x, patients)
+    ax.tick_params(axis="x", length=0)
+    ax.set(ylim=(0.6, 1.0), xlim=(-0.6, len(patients) - 0.4), xlabel="Query patient")
+    panel_label(ax, "b", x=-0.12, y=1.1)
+    fig.tight_layout(w_pad=2)
+    save(fig, figures / "fig9_conformal_shift")
 
 
 if __name__ == "__main__":
-    main()
+    if "--plot-only" in sys.argv:  # redraw from the saved tables, no remapping
+        tab = load_config().path("results") / "tables"
+        plot(
+            pd.read_csv(tab / "conformal_shift.csv"),
+            pd.read_csv(tab / "conformal_shift_per_patient.csv"),
+            load_config().path("results") / "figures",
+        )
+    else:
+        main()

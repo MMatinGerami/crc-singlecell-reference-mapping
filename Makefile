@@ -7,7 +7,7 @@ prepare:      ; uv run python scripts/01_prepare_data.py
 transfer:     ; uv run python scripts/02_label_transfer.py
 openset:      ; uv run python scripts/03_open_set.py
 integration:  ; uv run python scripts/04_integration_benchmark.py
-figures:      ; uv run python scripts/05_figures.py
+figures:     ; uv run python scripts/05_figures.py && for s in 07 08 09 10 11 12 13 14 16; do uv run python scripts/$${s}_*.py --plot-only || exit 1; done
 calibration:  ; uv run python scripts/06_calibrated_abstention.py
 pelka:        ; uv run python scripts/07_external_pelka.py
 patients:     ; uv run python scripts/08_per_patient.py
