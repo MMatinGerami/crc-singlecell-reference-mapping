@@ -5,6 +5,7 @@ title: "Cross-cohort cell-type annotation in colorectal cancer scRNA-seq"
 authors:
   - family-names: Gerami
     given-names: Matin
+    orcid: "https://orcid.org/0009-0004-5003-1240"
     email: mmatin.gerami@gmail.com
 repository-code: "https://github.com/MMatinGerami/crc-singlecell-reference-mapping"
 license: MIT
