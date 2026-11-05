@@ -22,9 +22,11 @@ DOUBLE = 183 * MM  # two Nature columns
 
 INK, INK_2, INK_3 = "#000000", "#333333", "#777777"
 GRID = "#dddddd"  # kept for reference lines only; no background grid
-# Wong palette: blue and vermillion stay distinct under every common colour-vision deficiency
-BLUE, VERMILLION, ORANGE, SKY, GREEN = "#0072B2", "#D55E00", "#E69F00", "#56B4E9", "#009E73"
-SERIES = [BLUE, VERMILLION, GREEN, ORANGE]
+# Wong palette with the vermillion swapped for a deep red and the amber for a purple (ColorBrewer):
+# blue and red stay distinct under common colour-vision deficiencies; red and green differ in
+# luminance
+BLUE, RED, PURPLE, SKY, GREEN = "#0072B2", "#B2182B", "#7B3294", "#56B4E9", "#009E73"
+SERIES = [BLUE, RED, GREEN, PURPLE]
 SEQUENTIAL = LinearSegmentedColormap.from_list("seq_blue", ["#ffffff", "#9ecae1", BLUE, "#08306b"])
 
 METHOD_LABELS = {
