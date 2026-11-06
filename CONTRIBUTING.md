@@ -50,4 +50,4 @@ a pull request that adds a method; open a separate pull request for those, with 
 
 ## Style
 
-Plain, specific wording in code comments, docstrings and documentation. No em dashes.
+Plain, specific wording in code comments, docstrings and documentation. 
