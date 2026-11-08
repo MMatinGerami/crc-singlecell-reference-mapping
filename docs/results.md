@@ -27,7 +27,7 @@ Built in September 2026, at the start of my M1.
 
 ![accuracy](../results/figures/fig2_accuracy.png)
 
-*Figure 2 | Label-transfer accuracy on the query cohort.* Macro-F1 on KUL3 for the six major cell types (**a**) and the 33 shared fine subtypes (**b**); error bars, 95% patient-bootstrap intervals (clipped at the point estimate where the interval lies below it).
+*Figure 2 | Label-transfer accuracy on the query cohort.* Macro-F1 on KUL3 for the six major cell types (**a**) and the 33 shared fine subtypes (**b**); error bars show the actual 95% patient-bootstrap percentile interval endpoints, independently of the point estimates.
 
 Confidence intervals come from resampling the 6 query patients (2,000 resamples), because cells from one patient are not independent. With so few patients, the percentile interval sits at or below the point estimate.
 
