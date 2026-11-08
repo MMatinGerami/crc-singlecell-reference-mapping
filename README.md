@@ -77,6 +77,13 @@ other tissues.
 - Fine labels such as CMS subtypes cut through continuous biology, so some errors are
   disagreements about boundaries.
 
+## Acknowledgements
+
+[Aysan Neghabi](https://github.com/aynemoon) reproduced the full SMC to KUL3 benchmark on an
+independent machine (aggregate macro-F1 within 0.003), reported the CMS1 training-sensitivity
+discrepancy tracked in issue #7, corrected the description of the logistic regression baseline,
+and fixed the bootstrap interval rendering in Figure 2.
+
 ## Citation
 
 ```bibtex
