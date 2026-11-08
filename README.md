@@ -10,8 +10,9 @@ can we flag cells whose type is missing from the reference?
 
 **In one line:** scANVI with scArches reaches macro-F1 0.75 over 33 fine subtypes when a Korean
 reference (23 patients, about 63k cells) annotates a Belgian query (6 patients, about 27k cells);
-logistic regression on PCA gets 0.74 without any batch correction; a missing lineage is easy to
-flag (AUROC 0.99) but a missing subtype with a close relative is absorbed by it.
+logistic regression on scaled log-normalised expression from 3,000 HVGs gets 0.74 without any
+batch correction; a missing lineage is easy to flag (AUROC 0.99) but a missing subtype with a close
+relative is absorbed by it.
 
 Reference: SMC cohort. Query: KUL3 cohort. Both from
 [Lee et al., 2020](https://doi.org/10.1038/s41588-020-0636-z). A second query,
@@ -36,7 +37,8 @@ latent space for 40,000 of the 88,922 cells. Left: by cohort. Right: major cell 
 | Does a multi-hospital reference help? | On Pelka, a reference from both hospitals raises macro-F1 on the smaller hospital from 0.82 to 0.92 and restores 90% coverage |
 | Is the confidence calibrated? | scANVI is over-confident (ECE 0.125); one temperature fitted on reference patients halves it (0.063) and transfers across cohorts |
 
-Methods compared: logistic regression and kNN on PCA (no batch correction), scVI + kNN, and
+Methods compared: logistic regression on scaled log-normalised HVGs, kNN on PCA (no batch
+correction), scVI + kNN, and
 scANVI. The query is mapped into scVI and scANVI with scArches, keeping the reference weights
 frozen. Every analysis (calibration, conformal sets, reference size, doublets, scib-metrics) is in
 [docs/results.md](docs/results.md); the model is described in [MODEL_CARD.md](MODEL_CARD.md).
@@ -62,8 +64,8 @@ uv run scmap annotate query.h5ad --target 0.95 -o labels.csv   # raw counts in .
   accuracy to expect per subtype, per patient and per tissue region before you trust the labels.
 - You need a worked, tested example of scArches mapping with abstention, novelty scores and
   conformal prediction sets under cohort shift, on public data that downloads in minutes.
-- You want the baseline numbers for a fair comparison: logistic regression on PCA is within
-  0.012 macro-F1 of scANVI here.
+- You want the baseline numbers for a fair comparison: logistic regression on scaled
+  log-normalised expression is within 0.012 macro-F1 of scANVI here.
 
 Not a general annotation tool (use CellTypist, scANVI or popV for that) and not tuned for
 other tissues.
