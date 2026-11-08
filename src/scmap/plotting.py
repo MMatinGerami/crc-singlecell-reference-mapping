@@ -13,6 +13,7 @@ from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
 MM = 1 / 25.4  # inches per millimetre
@@ -94,6 +95,28 @@ def panel_label(ax, letter: str, x: float = -0.12, y: float = 1.04) -> None:
         va="bottom",
         ha="left",
     )
+
+
+def interval_points(ax, positions, values, lows, highs, *, color=BLUE):
+    """Draw percentile endpoints independently of the point estimate."""
+    positions, values, lows, highs = np.broadcast_arrays(positions, values, lows, highs)
+    if not np.isfinite([positions, values, lows, highs]).all() or (lows > highs).any():
+        raise ValueError("interval endpoints and estimates must be finite, with low <= high")
+    intervals = ax.vlines(positions, lows, highs, color=color, lw=0.8)
+    points = ax.plot(positions, values, "o", color=color, zorder=2.1)[0]
+    capsize = mpl.rcParams["errorbar.capsize"]
+    if capsize > 0:
+        for bound in (lows, highs):
+            ax.plot(
+                positions,
+                bound,
+                linestyle="none",
+                marker="_",
+                color=color,
+                markersize=2 * capsize,
+                markeredgewidth=mpl.rcParams["errorbar.capthick"],
+            )
+    return intervals, points
 
 
 def save(fig, path: Path) -> None:
